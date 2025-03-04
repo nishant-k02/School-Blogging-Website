@@ -3,17 +3,18 @@ import PropTypes from 'prop-types';
 import { Typography, Grid, Card, CardActionArea, CardContent, CardMedia, Button, Stack } from '@mui/material';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import CommentIcon from '@mui/icons-material/Comment';
-import { Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, TextField, DialogActions, List, ListItem, ListItemText } from '@mui/material';
 
 function FeaturedPost(props) {
   const { post } = props;
   const [likes, setLikes] = useState(0);
   const [comments, setComments] = useState([]);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [isViewCommentsDialogOpen, setIsViewCommentsDialogOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
 
   const handleLike = () => {
-    setLikes(likes + 1); // Increment likes by one
+    setLikes(likes + 1);
     console.log("Liked!");
   };
 
@@ -27,10 +28,18 @@ function FeaturedPost(props) {
 
   const handleAddComment = () => {
     if (newComment.trim() !== '') {
-      setComments([...comments, newComment]);
-      setNewComment(''); // Reset the comment input field
-      handleCloseCommentDialog();
+      setComments([...comments, newComment]); // Add new comment to list
+      setNewComment(''); // Reset input
+      handleCloseCommentDialog(); // Close dialog
     }
+  };
+
+  const handleOpenViewCommentsDialog = () => {
+    setIsViewCommentsDialogOpen(true);
+  };
+
+  const handleCloseViewCommentsDialog = () => {
+    setIsViewCommentsDialogOpen(false);
   };
 
   return (
@@ -62,18 +71,24 @@ function FeaturedPost(props) {
               Like ({likes})
             </Button>
             <Button startIcon={<CommentIcon />} onClick={handleOpenCommentDialog}>
-              Comment
+              Comment ({comments.length})
             </Button>
+            {comments.length > 0 && (
+              <Button variant="outlined" onClick={handleOpenViewCommentsDialog}>
+                View Comments
+              </Button>
+            )}
           </Stack>
         </Card>
       </CardActionArea>
+
+      {/* Add Comment Dialog */}
       <Dialog open={isCommentDialogOpen} onClose={handleCloseCommentDialog}>
         <DialogTitle>Add a Comment</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             margin="dense"
-            id="name"
             label="Comment"
             type="text"
             fullWidth
@@ -85,6 +100,27 @@ function FeaturedPost(props) {
         <DialogActions>
           <Button onClick={handleCloseCommentDialog}>Cancel</Button>
           <Button onClick={handleAddComment}>Add Comment</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Comments Dialog */}
+      <Dialog open={isViewCommentsDialogOpen} onClose={handleCloseViewCommentsDialog}>
+        <DialogTitle>Comments</DialogTitle>
+        <DialogContent>
+          {comments.length > 0 ? (
+            <List>
+              {comments.map((comment, index) => (
+                <ListItem key={index}>
+                  <ListItemText primary={comment} />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography>No comments yet.</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseViewCommentsDialog}>Close</Button>
         </DialogActions>
       </Dialog>
     </Grid>

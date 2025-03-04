@@ -4,7 +4,7 @@ import { UserProvider } from './UserContext'; // Ensure this path is correct
 import Login from './components/Login';
 import Register from './components/Register';
 import Blog from './components/Blog';
-// import CreatePost from './components/CreatePost';
+import CreatePost from './components/CreatePost';
 
 
 function App() {
@@ -16,10 +16,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/blog" element={<Blog />} />
-          {/* <Route path="/createpost" element={<CreatePost />} /> */}
-          {/* <Route path="/PostsDisplay" element={<PostsDisplay />} />
-          <Route path="/profile" element={<Profile />} /> */}
-          {/* ... other routes */}
+          <Route path="/createpost" element={<CreatePost />} />
         </Routes>
       </Router>
     </UserProvider>

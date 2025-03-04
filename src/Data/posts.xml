@@ -1,0 +1,17 @@
+<posts>
+  <post>
+    <title>School Blogging Platform Launched</title>
+    <description>A new blogging platform has been launched for students to share their insights and experiences.</description>
+    <category>Technology</category>
+    <creator>johndoe</creator>
+    <date>2024-03-05</date>
+  </post>
+  <post>
+    <title>How to Succeed in Academics</title>
+    <description>Tips and strategies for academic success.</description>
+    <category>Academic Resources</category>
+    <creator>janedoe</creator>
+    <date>2024-03-04</date>
+  </post>
+  <!-- Add more posts as needed -->
+</posts>

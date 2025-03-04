@@ -1,0 +1,15 @@
+<users>
+  <user>
+    <username>johndoe</username>
+    <email>johndoe@example.com</email>
+    <password>hashed_password_1</password>
+    <persona>Student</persona>
+  </user>
+  <user>
+    <username>janedoe</username>
+    <email>janedoe@example.com</email>
+    <password>hashed_password_2</password>
+    <persona>Faculty</persona>
+  </user>
+  <!-- Add more users as needed -->
+</users>

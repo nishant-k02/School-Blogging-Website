@@ -1,19 +1,42 @@
-import * as React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardActionArea from '@mui/material/CardActionArea';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
+import { Typography, Grid, Card, CardActionArea, CardContent, CardMedia, Button, Stack } from '@mui/material';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import CommentIcon from '@mui/icons-material/Comment';
+import { Dialog, DialogTitle, DialogContent, TextField, DialogActions } from '@mui/material';
 
 function FeaturedPost(props) {
   const { post } = props;
+  const [likes, setLikes] = useState(0);
+  const [comments, setComments] = useState([]);
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [newComment, setNewComment] = useState('');
+
+  const handleLike = () => {
+    setLikes(likes + 1); // Increment likes by one
+    console.log("Liked!");
+  };
+
+  const handleOpenCommentDialog = () => {
+    setIsCommentDialogOpen(true);
+  };
+
+  const handleCloseCommentDialog = () => {
+    setIsCommentDialogOpen(false);
+  };
+
+  const handleAddComment = () => {
+    if (newComment.trim() !== '') {
+      setComments([...comments, newComment]);
+      setNewComment(''); // Reset the comment input field
+      handleCloseCommentDialog();
+    }
+  };
 
   return (
     <Grid item xs={12} md={6}>
       <CardActionArea component="a" href="#">
-        <Card sx={{ display: 'flex' }}>
+        <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <CardContent sx={{ flex: 1 }}>
             <Typography component="h2" variant="h5">
               {post.title}
@@ -30,12 +53,40 @@ function FeaturedPost(props) {
           </CardContent>
           <CardMedia
             component="img"
-            sx={{ width: 160, display: { xs: 'none', sm: 'block' } }}
+            sx={{ width: '100%', height: 160 }}
             image={post.image}
             alt={post.imageLabel}
           />
+          <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ padding: 2 }}>
+            <Button startIcon={<FavoriteBorderIcon />} onClick={handleLike}>
+              Like ({likes})
+            </Button>
+            <Button startIcon={<CommentIcon />} onClick={handleOpenCommentDialog}>
+              Comment
+            </Button>
+          </Stack>
         </Card>
       </CardActionArea>
+      <Dialog open={isCommentDialogOpen} onClose={handleCloseCommentDialog}>
+        <DialogTitle>Add a Comment</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            label="Comment"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCommentDialog}>Cancel</Button>
+          <Button onClick={handleAddComment}>Add Comment</Button>
+        </DialogActions>
+      </Dialog>
     </Grid>
   );
 }

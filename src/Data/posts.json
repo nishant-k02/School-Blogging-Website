@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "title": "First Post",
+    "description": "This is the description for the first post.",
+    "category": "Technology",
+    "image": "https://example.com/image1.jpg"
+  },
+  {
+    "id": 2,
+    "title": "Second Post",
+    "description": "This is the description for the second post.",
+    "category": "Travel",
+    "image": "https://example.com/image2.jpg"
+  },
+  {
+    "id": 3,
+    "title": "Third Post",
+    "description": "This is the description for the third post.",
+    "category": "Food",
+    "image": "https://example.com/image3.jpg"
+  }
+]

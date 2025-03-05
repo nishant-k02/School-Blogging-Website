@@ -12,6 +12,7 @@ function FeaturedPost(props) {
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [isViewCommentsDialogOpen, setIsViewCommentsDialogOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
 
   const handleLike = () => {
     setLikes(likes + 1);
@@ -28,9 +29,9 @@ function FeaturedPost(props) {
 
   const handleAddComment = () => {
     if (newComment.trim() !== '') {
-      setComments([...comments, newComment]); // Add new comment to list
-      setNewComment(''); // Reset input
-      handleCloseCommentDialog(); // Close dialog
+      setComments([...comments, newComment]);
+      setNewComment('');
+      handleCloseCommentDialog();
     }
   };
 
@@ -42,9 +43,17 @@ function FeaturedPost(props) {
     setIsViewCommentsDialogOpen(false);
   };
 
+  const handleOpenFullPostDialog = () => {
+    setIsFullPostDialogOpen(true);
+  };
+
+  const handleCloseFullPostDialog = () => {
+    setIsFullPostDialogOpen(false);
+  };
+
   return (
     <Grid item xs={12} md={6}>
-      <CardActionArea component="a" href="#">
+      <CardActionArea component="a" onClick={handleOpenFullPostDialog}>
         <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <CardContent sx={{ flex: 1 }}>
             <Typography component="h2" variant="h5">
@@ -81,6 +90,26 @@ function FeaturedPost(props) {
           </Stack>
         </Card>
       </CardActionArea>
+
+      {/* Full Post Dialog */}
+      <Dialog open={isFullPostDialogOpen} onClose={handleCloseFullPostDialog}>
+        <DialogTitle>{post.title}</DialogTitle>
+        <DialogContent>
+          <Typography variant="h6">{post.date}</Typography>
+          <Typography variant="body1" paragraph>
+            {post.description}
+          </Typography>
+          <CardMedia
+            component="img"
+            sx={{ width: '100%', height: 200, marginBottom: 2 }}
+            image={post.image}
+            alt={post.imageLabel}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseFullPostDialog}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Add Comment Dialog */}
       <Dialog open={isCommentDialogOpen} onClose={handleCloseCommentDialog}>

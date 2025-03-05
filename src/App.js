@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Blog from './components/Blog';
 import CreatePost from './components/CreatePost';
+import PostsDisplay from './components/PostsDisplay';
 
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/createpost" element={<CreatePost />} />
+          <Route path="/postsdisplay" element={<PostsDisplay />} />
         </Routes>
       </Router>
     </UserProvider>

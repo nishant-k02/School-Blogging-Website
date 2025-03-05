@@ -16,7 +16,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
 
-function Header({ sections, title }) {
+function Header({ sections = [], title }) {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -199,15 +199,19 @@ function Header({ sections, title }) {
         variant="dense"
         sx={{ justifyContent: 'space-between', overflowX: 'auto' }}
       >
-        {sections.map((section) => (
-          <RouterLink
-            key={section.title}
-            to={section.url}
-            style={{ textDecoration: 'none', color: 'inherit', padding: '10px', flexShrink: 0 }}
-          >
-            {section.title}
-          </RouterLink>
-        ))}
+        {sections && sections.length > 0 ? (
+          sections.map((section) => (
+            <RouterLink
+              key={section.title}
+              to={section.url}
+              style={{ textDecoration: 'none', color: 'inherit', padding: '10px', flexShrink: 0 }}
+            >
+              {section.title}
+            </RouterLink>
+          ))
+        ) : (
+          <Typography>No sections available</Typography>
+        )}
       </Toolbar>
 
       {/* Profile Dialog */}
@@ -353,7 +357,7 @@ function Header({ sections, title }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmation(false)}>Cancel</Button>
-          <Button onClick={() => handleDeleteUser(userToDelete)} color="primary">Delete</Button>
+          <Button onClick={() => handleDeleteUser(userToDelete)} color="error">Delete</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

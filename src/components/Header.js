@@ -16,16 +16,16 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
 
-function Header({ sections = [], title }) {
+function Header({ sections = [], title = '' }) {
   const { user, setUser } = useUser();
   const navigate = useNavigate();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [isProfileDialogOpen, setProfileDialogOpen] = useState(false);
   const [isManageUsersDialogOpen, setManageUsersDialogOpen] = useState(false);
-  const [username, setUsername] = useState(user.username);
-  const [email, setEmail] = useState(user.email);
-  const [password, setPassword] = useState(user.password);
+  const [username, setUsername] = useState(user?.username || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [password, setPassword] = useState(user?.password || '');
   const [profileMessage, setProfileMessage] = useState('');
   const [users, setUsers] = useState(getUserDataFromLocalStorage());
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', persona: '' });
@@ -182,7 +182,7 @@ function Header({ sections = [], title }) {
                 </ListItemIcon>
                 <ListItemText>Profile</ListItemText>
               </MenuItem>
-              {user.persona === 'Administrator' && (
+              {user?.persona === 'Administrator' && (
                 <MenuItem onClick={handleManageUsers}>
                   <ListItemIcon>
                     <ManageUsersIcon />
@@ -243,7 +243,7 @@ function Header({ sections = [], title }) {
             label="Persona"
             type="text"
             fullWidth
-            value={user.persona}
+            value={user?.persona || ''}
             disabled
           />
           <TextField
@@ -307,27 +307,27 @@ function Header({ sections = [], title }) {
               id="new-username"
               label="Username"
               type="text"
-              fullWidth
               value={newUser.username}
               onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              fullWidth
             />
             <TextField
               margin="normal"
               id="new-email"
               label="Email"
               type="email"
-              fullWidth
               value={newUser.email}
               onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              fullWidth
             />
             <TextField
               margin="normal"
               id="new-password"
               label="Password"
               type="password"
-              fullWidth
               value={newUser.password}
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              fullWidth
             />
             <TextField
               margin="normal"
@@ -337,41 +337,48 @@ function Header({ sections = [], title }) {
               fullWidth
               value={newUser.persona}
               onChange={(e) => setNewUser({ ...newUser, persona: e.target.value })}
-            >
+              >
+              
               {['Student', 'Faculty', 'Staff', 'Moderator', 'Administrator'].map((role) => (
                 <MenuItem key={role} value={role}>
                   {role}
                 </MenuItem>
               ))}
+        
             </TextField>
-            <Button variant="contained" color="primary" onClick={handleAddUser}>Add User</Button>
+            <Button onClick={handleAddUser}>Add User</Button>
           </Box>
         </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmation} onClose={() => setDeleteConfirmation(false)}>
-        <DialogTitle>Delete User</DialogTitle>
-        <DialogContent>
-          <Typography>Are you sure you want to delete this user?</Typography>
-        </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteConfirmation(false)}>Cancel</Button>
-          <Button onClick={() => handleDeleteUser(userToDelete)} color="error">Delete</Button>
+          <Button onClick={() => setManageUsersDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Delete User Confirmation */}
+      {deleteConfirmation && (
+        <Dialog open={deleteConfirmation} onClose={() => setDeleteConfirmation(false)}>
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            Are you sure you want to delete this user?
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteConfirmation(false)}>Cancel</Button>
+            <Button
+              onClick={() => handleDeleteUser(userToDelete)}
+              color="secondary"
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </React.Fragment>
   );
 }
 
 Header.propTypes = {
-  sections: PropTypes.arrayOf(
-    PropTypes.shape({
-      title: PropTypes.string.isRequired,
-      url: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
   title: PropTypes.string.isRequired,
+  sections: PropTypes.array,
 };
 
 export default Header;

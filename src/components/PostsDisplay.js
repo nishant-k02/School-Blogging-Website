@@ -6,22 +6,12 @@ import CommentIcon from '@mui/icons-material/Comment';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Header from './Header';
-import MainFeaturedPost from './MainFeaturedPost';
 import { useUser } from '../UserContext';
 import sections from './Blog'; // Import the sections variable from Blog.js
-import { CssBaseline, Paper, Link, useMediaQuery } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
 
-const mainFeaturedPost = {
-  title: 'School Blogging Platform',
-  description: "A platform for students to make a difference in the world.",
-  image: 'https://source.unsplash.com/random?school',
-  imageText: 'main image description',
-  linkText: 'Continue reading…',
-};
 
 const PostsDisplay = () => {
-  const theme = useTheme();
   const [posts, setPosts] = useState([]);
   const [checked, setChecked] = useState(false);
   const [openCommentDialog, setOpenCommentDialog] = useState(false);
@@ -31,7 +21,6 @@ const PostsDisplay = () => {
   const [openFullPostDialog, setOpenFullPostDialog] = useState(false);  // For viewing full post
   const [currentPost, setCurrentPost] = useState(null); // Store the current post for full view
   const { user: currentUser } = useUser(); // Use the useUser hook to access the current user
-  const matches = useMediaQuery(theme.breakpoints.up('md')); // Use the useMediaQuery hook
 
   useEffect(() => {
     let loadedPosts = JSON.parse(localStorage.getItem('posts')) || [];
@@ -186,7 +175,7 @@ const PostsDisplay = () => {
                       <Button startIcon={<CommentIcon />} onClick={() => handleOpenComments(post.id)}>
                         Comment
                       </Button>
-                      {currentUser.persona === 'Moderator' && (
+                      {currentUser?.persona === 'Moderator' && (
                         <Button
                           startIcon={<DeleteIcon />}
                           onClick={() => handleDeletePost(post.id)}

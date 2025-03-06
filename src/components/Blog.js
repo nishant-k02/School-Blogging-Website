@@ -3,7 +3,6 @@ import {
   CssBaseline,
   Grid,
   Container,
-  useMediaQuery,
 } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
@@ -136,7 +135,6 @@ const sidebar = {
 };
 
 export default function Blog() {
-  const matches = useMediaQuery(theme.breakpoints.up('md'));
 
   return (
     <ThemeProvider theme={theme}>

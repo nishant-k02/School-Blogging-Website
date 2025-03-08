@@ -14,12 +14,15 @@ function FeaturedPost(props) {
   const [newComment, setNewComment] = useState('');
   const [isFullPostDialogOpen, setIsFullPostDialogOpen] = useState(false);
 
-  const handleLike = () => {
+  // Handle Like Button
+  const handleLike = (event) => {
+    event.stopPropagation(); // Prevent full view opening
     setLikes(likes + 1);
-    console.log("Liked!");
   };
 
-  const handleOpenCommentDialog = () => {
+  // Handle Add Comment Dialog
+  const handleOpenCommentDialog = (event) => {
+    event.stopPropagation(); // Prevent full view opening
     setIsCommentDialogOpen(true);
   };
 
@@ -27,6 +30,7 @@ function FeaturedPost(props) {
     setIsCommentDialogOpen(false);
   };
 
+  // Handle Add Comment
   const handleAddComment = () => {
     if (newComment.trim() !== '') {
       setComments([...comments, newComment]);
@@ -35,7 +39,9 @@ function FeaturedPost(props) {
     }
   };
 
-  const handleOpenViewCommentsDialog = () => {
+  // Handle View Comments Dialog
+  const handleOpenViewCommentsDialog = (event) => {
+    event.stopPropagation(); // Prevent full view opening
     setIsViewCommentsDialogOpen(true);
   };
 
@@ -43,6 +49,7 @@ function FeaturedPost(props) {
     setIsViewCommentsDialogOpen(false);
   };
 
+  // Handle Full Post Dialog
   const handleOpenFullPostDialog = () => {
     setIsFullPostDialogOpen(true);
   };
@@ -53,8 +60,8 @@ function FeaturedPost(props) {
 
   return (
     <Grid item xs={12} md={6}>
-      <CardActionArea component="a" onClick={handleOpenFullPostDialog}>
-        <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <Card sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <CardActionArea component="div" onClick={handleOpenFullPostDialog}>
           <CardContent sx={{ flex: 1 }}>
             <Typography component="h2" variant="h5">
               {post.title}
@@ -75,21 +82,22 @@ function FeaturedPost(props) {
             image={post.image}
             alt={post.imageLabel}
           />
-          <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ padding: 2 }}>
-            <Button startIcon={<FavoriteBorderIcon />} onClick={handleLike}>
-              Like ({likes})
+        </CardActionArea>
+
+        <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" sx={{ padding: 2 }}>
+          <Button startIcon={<FavoriteBorderIcon />} onClick={handleLike}>
+            Like ({likes})
+          </Button>
+          <Button startIcon={<CommentIcon />} onClick={handleOpenCommentDialog}>
+            Comment ({comments.length})
+          </Button>
+          {comments.length > 0 && (
+            <Button variant="outlined" onClick={handleOpenViewCommentsDialog}>
+              View Comments
             </Button>
-            <Button startIcon={<CommentIcon />} onClick={handleOpenCommentDialog}>
-              Comment ({comments.length})
-            </Button>
-            {comments.length > 0 && (
-              <Button variant="outlined" onClick={handleOpenViewCommentsDialog}>
-                View Comments
-              </Button>
-            )}
-          </Stack>
-        </Card>
-      </CardActionArea>
+          )}
+        </Stack>
+      </Card>
 
       {/* Full Post Dialog */}
       <Dialog open={isFullPostDialogOpen} onClose={handleCloseFullPostDialog}>

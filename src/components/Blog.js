@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  CssBaseline,
-  Grid,
-  Container,
-} from '@mui/material';
+import { CssBaseline, Grid, Container } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import FacebookIcon from '@mui/icons-material/Facebook';
@@ -21,13 +17,17 @@ import post3 from './blog-post.3.md';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#ff4081',
+      main: '#1976D2', // Deep Blue
     },
     secondary: {
-      main: '#651fff',
+      main: '#64B5F6', // Light Blue
     },
     background: {
-      default: '#f4f4f4',
+      default: '#E3F2FD', // Soft Blue
+    },
+    text: {
+      primary: '#0D47A1', // Darker Blue
+      secondary: '#1565C0', // Slightly lighter blue
     },
   },
   typography: {
@@ -35,11 +35,11 @@ const theme = createTheme({
     h1: {
       fontWeight: 700,
       fontSize: '2.5rem',
-      color: '#3f51b5',
+      color: '#0D47A1',
     },
     h2: {
       fontWeight: 600,
-      color: '#ff4081',
+      color: '#1565C0',
     },
     body1: {
       color: '#333',
@@ -50,6 +50,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           padding: '20px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '10px',
+          boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
         },
       },
     },
@@ -58,8 +61,8 @@ const theme = createTheme({
         root: {
           padding: '20px',
           borderRadius: '10px',
-          backgroundColor: '#fff',
-          boxShadow: '0px 4px 10px rgba(0,0,0,0.1)',
+          backgroundColor: '#FFFFFF',
+          boxShadow: '0px 4px 10px rgba(0,0,0,0.15)',
         },
       },
     },
@@ -135,7 +138,6 @@ const sidebar = {
 };
 
 export default function Blog() {
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

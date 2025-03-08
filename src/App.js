@@ -6,6 +6,7 @@ import Register from './components/Register';
 import Blog from './components/Blog';
 import CreatePost from './components/CreatePost';
 import PostsDisplay from './components/PostsDisplay';
+import SearchResults from './components/SearchResults';
 
 
 function App() {
@@ -19,6 +20,8 @@ function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/createpost" element={<CreatePost />} />
           <Route path="/postsdisplay" element={<PostsDisplay />} />
+          <Route path="/search" element={<SearchResults />} />
+
         </Routes>
       </Router>
     </UserProvider>

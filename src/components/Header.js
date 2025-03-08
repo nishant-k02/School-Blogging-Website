@@ -31,6 +31,8 @@ function Header({ sections = [], title = '' }) {
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', persona: '' });
   const [deleteConfirmation, setDeleteConfirmation] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
 
   const handleLogout = () => {
     setUser(null);
@@ -97,6 +99,7 @@ function Header({ sections = [], title = '' }) {
       onClick={toggleDrawer(false)}
       onKeyDown={toggleDrawer(false)}
     >
+      
       <List>
         <Slide direction="right" in={isDrawerOpen} mountOnEnter unmountOnExit>
           <ListItem button onClick={() => navigate('/CreatePost')}>
@@ -150,6 +153,18 @@ function Header({ sections = [], title = '' }) {
         <Typography component="h2" variant="h5" color="inherit" align="center" noWrap sx={{ flex: 1 }}>
           {title}
         </Typography>
+        <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search by title or author"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            sx={{ ml: 0, mr: 0 }}
+        />
+        <IconButton onClick={() => navigate(`/search?query=${searchQuery}`)}>
+          <SearchIcon />
+        </IconButton>
+
         {user && (
           <div>
             <Button

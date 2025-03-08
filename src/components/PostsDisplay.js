@@ -29,7 +29,7 @@ const PostsDisplay = () => {
 
     loadedPosts = loadedPosts.map(post => ({
       ...post,
-      liked: userLikes[post.id]?.includes(currentUser.username),
+      liked: userLikes[post.id]?.includes(currentUser?.username),
       likes: userLikes[post.id]?.length || 0,
       comments: comments[post.id] || [],
     }));

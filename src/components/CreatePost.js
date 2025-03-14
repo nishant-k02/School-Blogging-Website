@@ -35,27 +35,37 @@ const CreatePost = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
-      alert('You must be logged in to create a post.');
-      return;
+        alert('You must be logged in to create a post.');
+        return;
     }
 
     setLoading(true);
 
     const newPost = {
-      id: Date.now(),
-      title: postTitle,
-      description: postDescription,
-      category: postCategory,
-      author: user.username,
-      comments: [],
-      date: new Date().toISOString(),
+        id: Date.now().toString(),
+        title: postTitle,
+        description: postDescription,
+        category: postCategory,
+        author: user.username,
+        comments: [],
+        date: new Date().toISOString(),
     };
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+        const response = await fetch('http://localhost:5000/api/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newPost),
+        });
 
-    const posts = JSON.parse(localStorage.getItem('posts')) || [];
-    posts.push(newPost);
-    localStorage.setItem('posts', JSON.stringify(posts));
+        if (response.ok) {
+            console.log('Post saved to Elasticsearch');
+        } else {
+            console.error('Failed to save post');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 
     setPostTitle('');
     setPostDescription('');
@@ -64,9 +74,10 @@ const CreatePost = () => {
     setLoading(false);
 
     setTimeout(() => {
-      navigate('/PostsDisplay');
+        navigate('/PostsDisplay');
     }, 2000);
-  };
+};
+
 
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);

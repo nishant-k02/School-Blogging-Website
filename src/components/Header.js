@@ -392,8 +392,13 @@ function Header({ sections = [], title = '' }) {
 }
 
 Header.propTypes = {
-  title: PropTypes.string.isRequired,
-  sections: PropTypes.array,
+  title: PropTypes.string,
+  sections: PropTypes.arrayOf(
+    PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      url: PropTypes.string.isRequired,
+    })
+  ),
 };
 
 export default Header;

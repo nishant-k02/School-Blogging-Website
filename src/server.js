@@ -40,7 +40,7 @@ app.get('/api/posts', async (req, res) => {
 
         console.log("Elasticsearch Full Response:", JSON.stringify(response, null, 2)); // Pretty print JSON
 
-        // 🔹 Fix: Check if `hits.hits` exists and is an array
+        //  Fix: Check if `hits.hits` exists and is an array
         if (!response.hits || !Array.isArray(response.hits.hits)) {
             throw new Error("Invalid Elasticsearch response structure");
         }
@@ -60,31 +60,26 @@ app.get('/api/posts', async (req, res) => {
     }
 });
 
-
-
-
-  app.get('/posts', async (req, res) => {
-    try {
-        const { body } = await client.search({
-            index: 'blog-posts',
-            size: 1000, // Fetch up to 1000 posts
-            body: {
-                query: {
-                    match_all: {} // Retrieve all posts
-                }
-            }
-        });
-
-        const posts = body.hits.hits.map(hit => ({
-            id: hit._id,
-            ...hit._source
-        }));
-
-        res.json(posts);
-    } catch (error) {
-        console.error('Error fetching posts:', error);
-        res.status(500).json({ error: 'Failed to fetch posts' });
-    }
+app.get('/posts', async (req, res) => {
+  try {
+      const { body } = await client.search({
+          index: 'blog-posts',
+          size: 1000, // Fetch up to 1000 posts
+          body: {
+              query: {
+                  match_all: {} // Retrieve all posts
+              }
+          }
+      });
+      const posts = body.hits.hits.map(hit => ({
+          id: hit._id,
+          ...hit._source
+      }));
+      res.json(posts);
+  } catch (error) {
+      console.error('Error fetching posts:', error);
+      res.status(500).json({ error: 'Failed to fetch posts' });
+  }
 });
 app.post('/posts/:id/like', async (req, res) => {
     const { id } = req.params;
@@ -154,8 +149,6 @@ app.post('/posts/:id/comment', async (req, res) => {
     }
 });
 
-
-
 app.delete('/posts/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -168,8 +161,36 @@ app.delete('/posts/:id', async (req, res) => {
     }
 });
 
+// Search post from elasticsearch API endpoint   
 
-
+app.get('/api/search', async (req, res) => {
+    const { query } = req.query;
+  
+    try {
+      const { hits } = await client.search({
+        index: 'blog-posts',
+        body: {
+          query: {
+            multi_match: {
+              query,
+              fields: ['title', 'description', 'category', 'author'],
+            },
+          },
+        },
+      });
+  
+      const results = hits.hits.map(hit => ({
+        id: hit._id,
+        ...hit._source,
+      }));
+  
+      res.json(results);
+    } catch (error) {
+      console.error('Elasticsearch search error:', error);
+      res.status(500).json({ error: 'Search failed' });
+    }
+});
+  
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

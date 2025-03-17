@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Container, Typography, Grid, Card, CardContent, CardMedia, Fade, 
-  Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, 
-  IconButton, Box, Avatar, CssBaseline 
+  Container, Typography, Grid, Card, CardContent, CardMedia, Fade, TextField,
+  Button, Dialog, DialogTitle, DialogContent, DialogActions, 
+   Box, CssBaseline 
 } from '@mui/material';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import CommentIcon from '@mui/icons-material/Comment';
-import CloseIcon from '@mui/icons-material/Close';
+// import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import Header from './Header';
 import { useUser } from '../UserContext';
@@ -44,7 +44,7 @@ const PostsDisplay = () => {
   // Handle Like
   const handleLike = async (postId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+      const response = await fetch(`http://localhost:5000/posts/${postId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -61,6 +61,7 @@ const PostsDisplay = () => {
 
   // Open Comment Dialog
   const handleOpenComments = (postId) => {
+    // console.log("Opening comments for Post ID:", postId); // Debugging
     setCurrentPostId(postId);
     setOpenCommentDialog(true);
   };
@@ -74,9 +75,10 @@ const PostsDisplay = () => {
   // Add Comment
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
+    // console.log("Current Post ID when adding comment:", currentPostId); // Debugging
 
     try {
-      const response = await fetch(`http://localhost:5000/api/posts/${currentPostId}/comment`, {
+      const response = await fetch(`http://localhost:5000/posts/${currentPostId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newComment, author: currentUser?.username }),
@@ -192,6 +194,20 @@ const PostsDisplay = () => {
                           </Button>
                         )}
                       </Box>
+
+                      {/*  Comments Section */}
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="h6">Comments:</Typography>
+                        {post.comments && post.comments.length > 0 ? (
+                          post.comments.map((comment, index) => (
+                            <Typography key={index} sx={{ ml: 2 }}>
+                              <strong>{comment.author}:</strong> {comment.text}
+                            </Typography>
+                          ))
+                        ) : (
+                          <Typography sx={{ ml: 2 }}>No comments yet.</Typography>
+                        )}
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>
@@ -199,6 +215,27 @@ const PostsDisplay = () => {
             ))}
           </Grid>
         )}
+
+        {/* Comment Dialog */}
+        <Dialog open={openCommentDialog} onClose={handleCloseComments} maxWidth="sm" fullWidth disableEnforceFocus={false}>
+          <DialogTitle>Add a Comment</DialogTitle>
+          <DialogContent>
+            <TextField
+              autoFocus
+              fullWidth
+              variant="outlined"
+              label="Write a comment..."
+              multiline
+              rows={3}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseComments} color="secondary">Cancel</Button>
+            <Button onClick={handleAddComment} variant="contained">Submit</Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Delete Post Confirmation */}
         <Dialog open={deleteConfirmationOpen} onClose={cancelDeletePost} maxWidth="xs" fullWidth>

@@ -46,7 +46,7 @@ app.get('/api/posts', async (req, res) => {
         }
 
         const posts = response.hits.hits.map(hit => {
-            console.log("Hit object:", hit); // Log each hit for debugging
+            // console.log("Hit object:", hit); // Log each hit for debugging
             return {
                 id: hit._id,
                 ...hit._source
@@ -89,23 +89,51 @@ app.get('/api/posts', async (req, res) => {
 app.post('/posts/:id/like', async (req, res) => {
     const { id } = req.params;
     try {
-        const post = await client.get({ index: 'blog-posts', id });
-        const updatedLikes = (post.body._source.likes || 0) + 1;
-        await client.update({ index: 'blog-posts', id, body: { doc: { likes: updatedLikes } } });
+        const { _source } = await client.get({ index: 'blog-posts', id });
+    
+        if (!_source) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+    
+        const updatedLikes = (_source.likes || 0) + 1;
+    
+        await client.update({
+            index: 'blog-posts',
+            id,
+            body: { doc: { likes: updatedLikes } }
+        });
+    
         res.json({ message: 'Post liked', likes: updatedLikes });
     } catch (error) {
+        if (error.meta && error.meta.statusCode === 404) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
         console.error('Error liking post:', error);
         res.status(500).json({ error: 'Failed to like post' });
     }
+    
 });
 app.post('/posts/:id/comment', async (req, res) => {
     const { id } = req.params;
     const { text, author } = req.body;
 
     try {
-        const post = await client.get({ index: 'blog-posts', id });
-        const updatedComments = [...post.body._source.comments, { text, author }];
+        //  Fetch the post from Elasticsearch
+        const postResponse = await client.get({ index: 'blog-posts', id });
 
+        if (!postResponse.found) {
+            console.error("Post not found:", id);
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        //  Extract post data
+        const post = postResponse._source;  // Directly access _source
+        console.log("Fetched post from Elasticsearch:", post);
+
+        //  Ensure comments array exists
+        const updatedComments = [...(post.comments || []), { text, author }];
+
+        //  Update the post with new comments
         await client.update({
             index: 'blog-posts',
             id,
@@ -114,12 +142,20 @@ app.post('/posts/:id/comment', async (req, res) => {
             }
         });
 
+        console.log("Updated comments:", updatedComments);
         res.json({ message: 'Comment added', comments: updatedComments });
+
     } catch (error) {
         console.error('Error adding comment:', error);
+        if (error.meta && error.meta.statusCode === 404) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
         res.status(500).json({ error: 'Failed to add comment' });
     }
 });
+
+
+
 app.delete('/posts/:id', async (req, res) => {
     const { id } = req.params;
 

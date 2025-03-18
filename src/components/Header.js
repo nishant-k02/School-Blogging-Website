@@ -1,5 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import UnsubscribeIcon from '@mui/icons-material/Unsubscribe';
+import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import {
   Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem,
   Toolbar, Typography, Drawer, List, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, ListItem, Slide
@@ -15,6 +18,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
+import axios from 'axios';
 
 function Header({ sections = [], title = '' }) {
   const { user, setUser } = useUser();
@@ -32,6 +36,37 @@ function Header({ sections = [], title = '' }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [notifications, setNotifications] = useState([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(false);
+
+  // Fetch notifications and subscription status when component mounts
+useEffect(() => {
+  if (user) {
+    fetchNotifications();
+    checkSubscriptionStatus();
+  }
+}, [user]);
+
+const fetchNotifications = async () => {
+  try {
+    const response = await axios.get(`http://localhost:9200/notifications/_search?q=user:${user.username}`);
+    const hits = response.data.hits.hits.map(hit => hit._source);
+    setNotifications(hits);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+  }
+};
+
+const checkSubscriptionStatus = async () => {
+  try {
+    const response = await axios.get(`http://localhost:9200/subscriptions/_search?q=user:${user.username}`);
+    setSubscriptionStatus(response.data.hits.hits.length > 0);
+  } catch (error) {
+    console.error('Error checking subscription status:', error);
+  }
+};
 
 
   const handleLogout = () => {
@@ -132,6 +167,39 @@ function Header({ sections = [], title = '' }) {
     </div>
   );
 
+  const handleSubscriptionToggle = async () => {
+    if (subscriptionStatus) {
+        // Unsubscribe
+        try {
+            await axios.post(`http://localhost:9200/subscriptions/_delete_by_query`, {
+                query: {
+                    term: { "user.keyword": user.username } // Use "user.keyword" for exact matching
+                }
+            }, {
+                headers: { "Content-Type": "application/json" }
+            });
+
+            setSubscriptionStatus(false);
+        } catch (error) {
+            console.error('Error unsubscribing:', error);
+        }
+    } else {
+        // Subscribe
+        try {
+            await axios.post('http://localhost:9200/subscriptions/_doc', {
+                user: user.username,
+                timestamp: new Date().toISOString()
+            });
+
+            setSubscriptionStatus(true);
+        } catch (error) {
+            console.error('Error subscribing:', error);
+        }
+    }
+};
+
+  
+
   return (
     <React.Fragment>
       <Toolbar sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -196,6 +264,21 @@ function Header({ sections = [], title = '' }) {
                   <AccountCircleIcon />
                 </ListItemIcon>
                 <ListItemText>Profile</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => setIsNotificationOpen(true)}>
+                <ListItemIcon>
+                  <NotificationsIcon />
+                </ListItemIcon>
+                <ListItemText>Notifications</ListItemText>
+              </MenuItem>
+
+              <MenuItem onClick={handleSubscriptionToggle}>
+                <ListItemIcon>
+                  {subscriptionStatus ? <UnsubscribeIcon /> : <SubscriptionsIcon />}
+                </ListItemIcon>
+                <ListItemText>
+                  {subscriptionStatus ? 'Unsubscribe' : 'Subscribe'}
+                </ListItemText>
               </MenuItem>
               {user?.persona === 'Administrator' && (
                 <MenuItem onClick={handleManageUsers}>

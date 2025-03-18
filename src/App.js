@@ -7,6 +7,7 @@ import Blog from './components/Blog';
 import CreatePost from './components/CreatePost';
 import PostsDisplay from './components/PostsDisplay';
 import SearchResults from './components/SearchResults';
+import Chatbot from './components/chatbot';
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
           <Route path="/createpost" element={<CreatePost />} />
           <Route path="/postsdisplay" element={<PostsDisplay />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/chatbot" element={<Chatbot />} />
 
         </Routes>
       </Router>

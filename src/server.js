@@ -1,3 +1,4 @@
+const { getActivityRecommendation } = require("./api.js");
 const express = require('express');
 const bodyParser = require('body-parser');
 const { Client } = require('@elastic/elasticsearch');
@@ -8,8 +9,60 @@ const port = 5000;
 app.use(cors({ origin: '*' }));
 const client = new Client({ node: 'http://localhost:9200' });
 
-app.use(cors());
+
+app.use(cors({
+    origin: 'http://localhost:3000', // Replace with your frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+  }));
 app.use(bodyParser.json());
+
+// Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
+async function fetchOpenAIResponse(query) {
+    const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'Your-OpenAI-API-key-here'; // Replace with your OpenAI API key
+
+    try {
+      const response = await axios.post(
+          'https://api.openai.com/v1/completions', // Corrected endpoint for Completions
+          {
+              model: "gpt-3.5-turbo-instruct", // Adjust the model as needed
+              prompt: prompt,
+              max_tokens: 100,
+              temperature: 0.7, // Optional: adjust as needed for creativity
+              top_p: 1.0,
+              frequency_penalty: 0.0,
+              presence_penalty: 0.0,
+          },
+          {
+              headers: {
+                  'Authorization': `Bearer ${openaiApiKey}`,
+                  'Content-Type': 'application/json'
+              }
+          }
+      );
+      // Ensure we correctly handle and return the generated text
+      return response.data.choices && response.data.choices.length > 0 
+               ? response.data.choices[0].text.trim() 
+               : "No suggestions could be found.";
+    } catch (error) {
+        console.error('OpenAI API error:', error.response?.data || error.message);
+        throw new Error('Failed to fetch response from OpenAI');
+    }
+}
+
+// Endpoint to generate suggestions using OpenAI
+app.post('/api/generate-suggestion', async (req, res) => {
+    const { category } = req.body;
+    
+    try {
+      const suggestion = await fetchOpenAIResponse(category);
+      res.json({ suggestion });
+    } catch (error) {
+      console.error('Failed to generate suggestion:', error);
+      res.status(500).json({ message: 'Failed to generate suggestion', error: error.message });
+    }
+  });
 
 // Create a new post and notify subscribers
 app.post('/api/posts', async (req, res) => {
@@ -188,6 +241,13 @@ app.get('/api/subscriptions/:userId', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch subscriptions' });
     }
 });
+
+//endpoint for suggestions
+app.post("/api/recommend", async (req, res) => {
+    const { query } = req.body;
+    const recommendation = await getActivityRecommendation(query);
+    res.json({ response: recommendation });
+  });
 
 app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

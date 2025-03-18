@@ -4,7 +4,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import UnsubscribeIcon from '@mui/icons-material/Unsubscribe';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import {
-  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem,
+  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Modal,Backdrop, Fade,
   Toolbar, Typography, Drawer, List, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, ListItem, Slide
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -15,10 +15,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import ManageUsersIcon from '@mui/icons-material/Group';
 import DeleteIcon from '@mui/icons-material/Delete';
 import HomeIcon from '@mui/icons-material/Home';
+import FaceIcon from '@mui/icons-material/Face';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
 import axios from 'axios';
+import Chatbot from "../components/chatbot"; // Import Chatbot component
 
 function Header({ sections = [], title = '' }) {
   const { user, setUser } = useUser();
@@ -41,6 +43,8 @@ function Header({ sections = [], title = '' }) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState(false);
 
+  const [isChatbotOpen, setChatbotOpen] = useState(false);
+
   // Fetch notifications and subscription status when component mounts
 useEffect(() => {
   if (user) {
@@ -48,6 +52,21 @@ useEffect(() => {
     checkSubscriptionStatus();
   }
 }, [user]);
+
+// Prevent modal from closing when interacting inside
+const handleModalClick = (event) => {
+  event.stopPropagation(); // Prevents modal from closing on clicks inside
+};
+
+const handleChatbotOpen = (event) => {
+  event.stopPropagation(); // Prevent event bubbling
+  setChatbotOpen(true);
+};
+
+const handleChatbotClose = (event) => {
+  event.stopPropagation();
+  setChatbotOpen(false);
+};
 
 const fetchNotifications = async () => {
   try {
@@ -152,6 +171,14 @@ const checkSubscriptionStatus = async () => {
             <ListItemText primary="View Posts" />
           </ListItem>
         </Slide>
+        <Slide direction="right" in={isDrawerOpen} mountOnEnter unmountOnExit>
+                <ListItem button onClick={() => navigate('/chatbot')}>
+          <ListItemIcon>
+            <FaceIcon /> {/* Use the WbSunnyIcon instead of WeatherIcon */}
+          </ListItemIcon>
+          <ListItemText primary="AI Assistant" />
+        </ListItem>
+              </Slide>
         <Divider />
         {user && user.persona === 'Administrator' && (
           <Slide direction="right" in={isDrawerOpen} mountOnEnter unmountOnExit>

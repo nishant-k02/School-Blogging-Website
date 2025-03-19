@@ -5,7 +5,7 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import axios from 'axios';
 import Header from './Header';
-import Footer from './Footer';
+// import Footer from './Footer';
 
 const sections = [
   { title: 'Academic Resources', url: '#' },

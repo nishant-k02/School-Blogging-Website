@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 const fetchEvents = async (query, city) => {
-    const apiKey = process.env.SERP_API_KEY || 'Your-Serp-API-Key-here';    try {
+    const apiKey = process.env.SERP_API_KEY || 'your-serp-api-key';     try {
         const response = await axios.get(`https://serpapi.com/search.json`, {
             params: {
                 q: `${encodeURIComponent(query)}+events`,
@@ -65,12 +65,12 @@ const isEventQuery = (query) => {
 
 app.post('/api/getSuggestions', async (req, res) => {
     const { query } = req.body;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'Your-OpenAI-API-key-here'; // Replace with your OpenAI API key;
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Replace with your OpenAI API key
         let additionalContext = '';
 
     if (isWeatherQuery(query)) {
         const city = "Chicago"; // Example city, could be dynamic
-        const weatherApiKey = process.env.OPENWEATHERMAP_API_KEY || 'Your-WEATHERMAP_API_KEY-here'; // Replace with your OpenWeatherMap API key
+        const weatherApiKey = process.env.OPENWEATHERMAP_API_KEY || 'your-weatheropenmap-api-key'; // Replace with your weather API key
                 try {
             const weatherResponse = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
                 params: {
@@ -102,6 +102,39 @@ app.post('/api/getSuggestions', async (req, res) => {
     } catch (error) {
         console.error('Error fetching suggestion:', error);
         res.status(500).json({ error: 'Error processing your query', details: error.message });
+    }
+});
+
+app.post('/api/generateReply', async (req, res) => {
+    const { postId, content } = req.body;
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Replace with your OpenAI API key
+
+    if (!postId || !content) {
+        return res.status(400).json({ error: 'Post ID and content are required.' });
+    }
+
+    const prompt = {
+        model: "gpt-3.5-turbo",
+        messages: [
+            { role: "system", content: "You are a helpful assistant generating thoughtful replies to blog posts." },
+            { role: "user", content: `Reply to this blog post: "${content}"` }
+        ],
+    };
+
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', prompt, {
+            headers: {
+                'Authorization': `Bearer ${openaiApiKey}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const aiReply = response.data.choices?.[0]?.message?.content.trim() || "I couldn't generate a reply.";
+        res.json({ reply: aiReply });
+
+    } catch (error) {
+        console.error('OpenAI API error:', error.message);
+        res.status(500).json({ error: 'Error generating AI reply.' });
     }
 });
 

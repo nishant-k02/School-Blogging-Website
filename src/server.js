@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 // Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
 async function fetchOpenAIResponse(query) {
     const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'Your-OpenAI-API-key-here'; // Replace with your OpenAI API key
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Replace with your OpenAI API key
 
     try {
       const response = await axios.post(

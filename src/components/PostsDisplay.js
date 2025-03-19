@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Container, Typography, Grid, Card, CardContent, CardMedia, Fade, TextField,
+  Container, Typography, Grid, Card, CardContent, CardMedia, Fade, TextField, Switch, FormControlLabel,
   Button, Dialog, DialogTitle, DialogContent, DialogActions, 
    Box, CssBaseline 
 } from '@mui/material';
@@ -23,6 +23,11 @@ const PostsDisplay = () => {
   const [openFullPostDialog, setOpenFullPostDialog] = useState(false);
   const [currentPost, setCurrentPost] = useState(null);
   const { user: currentUser } = useUser(); 
+  const [aiReplyEnabled, setAiReplyEnabled] = useState(false);
+  const [aiReply, setAiReply] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -61,10 +66,11 @@ const PostsDisplay = () => {
 
   // Open Comment Dialog
   const handleOpenComments = (postId) => {
-    // console.log("Opening comments for Post ID:", postId); // Debugging
+    setSelectedPostId(postId);
     setCurrentPostId(postId);
     setOpenCommentDialog(true);
   };
+  
 
   const handleCloseComments = () => {
     setOpenCommentDialog(false);
@@ -135,6 +141,45 @@ const PostsDisplay = () => {
     setOpenFullPostDialog(false);
     setCurrentPost(null);
   };
+
+  // AI Reply Generation
+  const generateAIReply = async (postId) => {
+    if (!aiReplyEnabled) return;
+  
+    setIsLoading(true);
+  
+    try {
+      // Find the post description based on postId
+      const post = posts.find((p) => p.id === postId);  // Assuming `posts` is an array of post objects
+  
+      if (!post || !post.description?.trim()) {
+        console.error("Error: Post description is missing.");
+        setAiReply("AI reply cannot be generated without a post description.");
+        setIsLoading(false);
+        return;
+      }
+  
+      console.log("Sending request:", JSON.stringify({ postId, content: post.description }));
+  
+      const response = await fetch("http://localhost:3002/api/generateReply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, content: post.description }),
+      });
+  
+      if (!response.ok) throw new Error("Failed to generate AI reply");
+  
+      const data = await response.json();
+      setAiReply(data.reply);
+    } catch (error) {
+      console.error("Error generating AI reply:", error);
+      setAiReply("AI could not generate a reply. Please try again.");
+    }
+  
+    setIsLoading(false);
+  };
+  
+  
 
   return (
     <React.Fragment>
@@ -217,25 +262,58 @@ const PostsDisplay = () => {
         )}
 
         {/* Comment Dialog */}
-        <Dialog open={openCommentDialog} onClose={handleCloseComments} maxWidth="sm" fullWidth disableEnforceFocus={false}>
-          <DialogTitle>Add a Comment</DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              fullWidth
-              variant="outlined"
-              label="Write a comment..."
-              multiline
-              rows={3}
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseComments} color="secondary">Cancel</Button>
-            <Button onClick={handleAddComment} variant="contained">Submit</Button>
-          </DialogActions>
-        </Dialog>
+<Dialog open={openCommentDialog} onClose={handleCloseComments} maxWidth="sm" fullWidth disableEnforceFocus={false}>
+  <DialogTitle>Add a Comment</DialogTitle>
+  <DialogContent>
+    <TextField
+      autoFocus
+      fullWidth
+      variant="outlined"
+      label="Write a comment..."
+      multiline
+      rows={3}
+      value={newComment}
+      onChange={(e) => setNewComment(e.target.value)}
+    />
+
+    {/* AI Reply Toggle */}
+    <FormControlLabel
+      control={
+        <Switch
+          checked={aiReplyEnabled}
+          onChange={() => setAiReplyEnabled(prev => !prev)}
+          color="primary"
+        />
+      }
+      label="Use AI to Generate a Reply"
+      sx={{ mt: 2 }}
+    />
+
+    {/* AI Reply Button */}
+    <Button 
+      variant="contained" 
+      onClick={() => generateAIReply(selectedPostId, newComment)} 
+      disabled={!aiReplyEnabled || isLoading}
+      sx={{ mt: 2 }}
+    >
+      {isLoading ? "Generating..." : "Generate AI Reply"}
+    </Button>
+
+    {/* Display AI Reply */}
+    {aiReply && (
+      <Box sx={{ mt: 2, p: 2, border: '1px solid #ccc', borderRadius: '5px', backgroundColor: '#f5f5f5' }}>
+        <Typography variant="subtitle2">AI Suggestion:</Typography>
+        <Typography>{aiReply}</Typography>
+      </Box>
+    )}
+  </DialogContent>
+  
+  <DialogActions>
+    <Button onClick={handleCloseComments} color="secondary">Cancel</Button>
+    <Button onClick={handleAddComment} variant="contained">Submit</Button>
+  </DialogActions>
+</Dialog>
+
 
         {/* Delete Post Confirmation */}
         <Dialog open={deleteConfirmationOpen} onClose={cancelDeletePost} maxWidth="xs" fullWidth>

@@ -4,7 +4,7 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import UnsubscribeIcon from '@mui/icons-material/Unsubscribe';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import {
-  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Modal,Backdrop, Fade,
+  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Modal,Backdrop, Fade, Switch,ListSubheader,
   Toolbar, Typography, Drawer, List, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, ListItem, Slide
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -20,6 +20,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
 import axios from 'axios';
+import { Badge } from '@mui/material';
 import Chatbot from "../components/chatbot"; // Import Chatbot component
 
 function Header({ sections = [], title = '' }) {
@@ -41,17 +42,52 @@ function Header({ sections = [], title = '' }) {
 
   const [notifications, setNotifications] = useState([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState(false);
+  const [isNotificationsDialogOpen, setNotificationsDialogOpen] = useState(false);
+  const [isSubscribeOpen, setSubscribeOpen] = useState(false);
+
+  const [subscribedCategories, setSubscribedCategories] = useState(user ? user.subscribedCategories || [] : []);
 
   const [isChatbotOpen, setChatbotOpen] = useState(false);
 
   // Fetch notifications and subscription status when component mounts
+  useEffect(() => {
+
+    const userData = getUserDataFromLocalStorage();
+    if (Array.isArray(userData)) {
+      setUsers(userData);
+    } else if (typeof userData === 'object' && userData !== null) {
+      setUsers([userData]);
+    } else {
+      console.error('Unexpected user data:', userData);
+    }
+
+  }, []);
+
+ // Real-time notifications using EventSource
 useEffect(() => {
-  if (user) {
-    fetchNotifications();
-    checkSubscriptionStatus();
-  }
-}, [user]);
+  if (!user) return;
+
+  const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${user.username}`);
+
+  eventSource.onmessage = (event) => {
+    const newPost = JSON.parse(event.data);
+
+    if (subscribedCategories.includes(newPost.category)) {
+      setNotifications(prev => [
+        { id: Date.now(), message: `New post in ${newPost.category}: "${newPost.title}"` },
+        ...prev,
+      ]);
+    }
+  };
+
+  eventSource.onerror = () => {
+    console.error('EventSource connection failed.');
+    eventSource.close();
+  };
+
+  return () => eventSource.close();
+}, [user, subscribedCategories]);
+
 
 // Prevent modal from closing when interacting inside
 const handleModalClick = (event) => {
@@ -68,22 +104,61 @@ const handleChatbotClose = (event) => {
   setChatbotOpen(false);
 };
 
-const fetchNotifications = async () => {
+const handleSubscribeOpen = () => {
+  setSubscribeOpen(true);
+};
+
+const handleSubscribeClose = () => {
+  setSubscribeOpen(false);
+};
+
+const handleNotificationsClick = () => {
+  setNotificationsDialogOpen(true);
+};
+
+const handleNotificationsClose = () => {
+  setNotificationsDialogOpen(false)
+};
+
+// Subscribe to a category
+const handleSubscribe = async (category) => {
   try {
-    const response = await axios.get(`http://localhost:9200/notifications/_search?q=user:${user.username}`);
-    const hits = response.data.hits.hits.map(hit => hit._source);
-    setNotifications(hits);
+    const response = await fetch('http://localhost:5000/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.username, topic: category }),
+    });
+
+    if (response.ok) {
+      setSubscribedCategories([...subscribedCategories, category]);
+      console.log(`Subscribed to ${category}`);
+    } else {
+      throw new Error(`Failed to subscribe to ${category}`);
+    }
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error(error.message);
   }
 };
 
-const checkSubscriptionStatus = async () => {
+
+
+// Unsubscribe from a category
+const handleUnsubscribe = async (category) => {
   try {
-    const response = await axios.get(`http://localhost:9200/subscriptions/_search?q=user:${user.username}`);
-    setSubscriptionStatus(response.data.hits.hits.length > 0);
+    const response = await fetch('http://localhost:5000/api/unsubscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.username, topic: category }),
+    });
+
+    if (response.ok) {
+      setSubscribedCategories(subscribedCategories.filter(cat => cat !== category));
+      console.log(`Unsubscribed from ${category}`);
+    } else {
+      throw new Error(`Failed to unsubscribe from ${category}`);
+    }
   } catch (error) {
-    console.error('Error checking subscription status:', error);
+    console.error(error.message);
   }
 };
 
@@ -193,40 +268,6 @@ const checkSubscriptionStatus = async () => {
       </List>
     </div>
   );
-
-  const handleSubscriptionToggle = async () => {
-    if (subscriptionStatus) {
-        // Unsubscribe
-        try {
-            await axios.post(`http://localhost:9200/subscriptions/_delete_by_query`, {
-                query: {
-                    term: { "user.keyword": user.username } // Use "user.keyword" for exact matching
-                }
-            }, {
-                headers: { "Content-Type": "application/json" }
-            });
-
-            setSubscriptionStatus(false);
-        } catch (error) {
-            console.error('Error unsubscribing:', error);
-        }
-    } else {
-        // Subscribe
-        try {
-            await axios.post('http://localhost:9200/subscriptions/_doc', {
-                user: user.username,
-                timestamp: new Date().toISOString()
-            });
-
-            setSubscriptionStatus(true);
-        } catch (error) {
-            console.error('Error subscribing:', error);
-        }
-    }
-};
-
-  
-
   return (
     <React.Fragment>
       <Toolbar sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -292,20 +333,24 @@ const checkSubscriptionStatus = async () => {
                 </ListItemIcon>
                 <ListItemText>Profile</ListItemText>
               </MenuItem>
-              <MenuItem onClick={() => setIsNotificationOpen(true)}>
+              <MenuItem onClick={handleNotificationsClick}>
                 <ListItemIcon>
-                  <NotificationsIcon />
+                  <Badge 
+                    badgeContent={notifications.length} 
+                    color="error"
+                    anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  >
+                    <NotificationsIcon fontSize="medium" />
+                  </Badge>
                 </ListItemIcon>
                 <ListItemText>Notifications</ListItemText>
               </MenuItem>
 
-              <MenuItem onClick={handleSubscriptionToggle}>
+              <MenuItem onClick={handleSubscribeOpen}>
                 <ListItemIcon>
-                  {subscriptionStatus ? <UnsubscribeIcon /> : <SubscriptionsIcon />}
+                  <NotificationsIcon />
                 </ListItemIcon>
-                <ListItemText>
-                  {subscriptionStatus ? 'Unsubscribe' : 'Subscribe'}
-                </ListItemText>
+                <ListItemText>Subscribe</ListItemText>
               </MenuItem>
               {user?.persona === 'Administrator' && (
                 <MenuItem onClick={handleManageUsers}>
@@ -319,6 +364,26 @@ const checkSubscriptionStatus = async () => {
           </div>
         )}
       </Toolbar>
+      <Dialog open={isSubscribeOpen} onClose={handleSubscribeClose}>
+        <DialogTitle>Manage Subscriptions</DialogTitle>
+        <DialogContent>
+          <ListSubheader>Available Categories</ListSubheader>
+          {sections.map((section) => (
+            <ListItem key={section.title}>
+              <ListItemText primary={section.title} />
+              <Switch
+                checked={subscribedCategories.includes(section.title)}
+                onChange={() => subscribedCategories.includes(section.title) 
+                  ? handleUnsubscribe(section.title) 
+                  : handleSubscribe(section.title)}
+              />
+            </ListItem>
+          ))}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleSubscribeClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
       <Toolbar
         component="nav"
         variant="dense"
@@ -391,6 +456,42 @@ const checkSubscriptionStatus = async () => {
           <Button onClick={handleUpdateProfile} color="primary">Save</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Notifications Dialog */}
+
+      <Dialog open={isNotificationsDialogOpen} onClose={handleNotificationsClose} fullWidth>
+        <DialogTitle>
+          Notifications
+          <Button 
+            variant="outlined" 
+            size="small" 
+            onClick={() => setNotifications([])}
+            sx={{ float: 'right' }}
+          >
+            Clear All
+          </Button>
+        </DialogTitle>
+        <DialogContent dividers>
+          <List>
+            {notifications.length > 0 ? (
+              notifications.map((notification) => (
+                <ListItem key={notification.id} divider>
+                  <ListItemIcon><NotificationsIcon color="action" /></ListItemIcon>
+                  <ListItemText 
+                    primary={notification.message}
+                    secondary={new Date(notification.id).toLocaleString()}
+                  />
+                </ListItem>
+              ))
+            ) : (
+              <ListItem>
+                <ListItemText primary="No new notifications" />
+              </ListItem>
+            )}
+          </List>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Manage Users Dialog */}
       <Dialog open={isManageUsersDialogOpen} onClose={() => setManageUsersDialogOpen(false)}>

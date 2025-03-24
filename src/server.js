@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 // Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
 async function fetchOpenAIResponse(query) {
     const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Replace with your OpenAI API key
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-key'; // Replace with your OpenAI API key
 
     try {
       const response = await axios.post(
@@ -240,6 +240,27 @@ app.get('/api/subscriptions/:userId', async (req, res) => {
         console.error('Error fetching subscriptions:', error);
         res.status(500).json({ error: 'Failed to fetch subscriptions' });
     }
+});
+
+// Store SSE clients for real-time notifications
+let notificationClients = {};
+
+// SSE endpoint for real-time notifications
+app.get('/api/notifications', (req, res) => {
+  const userId = req.query.userId;
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  // Add the client to the notificationClients map
+  notificationClients[userId] = notificationClients[userId] || [];
+  notificationClients[userId].push(res);
+
+  // Remove the client when the connection closes
+  req.on('close', () => {
+    notificationClients[userId] = notificationClients[userId].filter(client => client !== res);
+  });
 });
 
 //endpoint for suggestions

@@ -75,7 +75,7 @@ const ChatComponent = () => {
       {/* Chat interface container */}
       <Container sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
         <Paper elevation={3} sx={{ maxWidth: 600, margin: 'auto', padding: 2, position: 'relative', zIndex: 1, marginTop: 20 }}>
-          <Typography variant="h4" textAlign="center" gutterBottom>Chat with VI Assistant</Typography>
+          <Typography variant="h4" textAlign="center" gutterBottom>Chat with AI Assistant</Typography>
           <List sx={{ maxHeight: 300, overflow: 'auto', mb: 5 }}>
             {messages.map((msg, index) => (
               <ListItem key={index} alignItems="flex-start">

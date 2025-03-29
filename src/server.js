@@ -20,7 +20,7 @@ app.use(bodyParser.json());
 // Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
 async function fetchOpenAIResponse(query) {
     const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-key'; // Replace with your OpenAI API key
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Ensure you have your OpenAI API key set in your environment variables
 
     try {
       const response = await axios.post(
@@ -68,23 +68,43 @@ app.post('/api/generate-suggestion', async (req, res) => {
 app.post('/api/posts', async (req, res) => {
     try {
         const { id, title, description, category, author, date } = req.body;
-        
+
+        // Save the new post in Elasticsearch
+        const newPost = { title, description, category, author, date, likes: 0, comments: [] };
         await client.index({
             index: 'blog-posts',
             id: id.toString(),
-            document: { title, description, category, author, date, likes: 0, comments: [] }
+            document: newPost,
         });
+        
+        console.log(`New post created:`, newPost); // Debugging statement to confirm the post was created
 
-        // Notify subscribers
+        // Fetch subscribers for the category
         const { hits } = await client.search({
             index: 'subscriptions',
             body: {
-                query: { match: { topic: category } } 
-            }
+                query: { match: { topic: category } },
+            },
         });
 
-        const subscribers = hits.hits.map(hit => hit._source.userId);
-        console.log(`Notifying subscribers:`, subscribers);
+        // Initialize subscribers array
+        const subscribers = hits.hits.map((hit) => hit._source.userId).filter((userId) => userId !== undefined && userId !== null);;
+
+        console.log(`Subscribers for category "${category}":`, subscribers);  // Debugging statement to confirm subscribers are fetched
+
+        // Notify subscribers
+        if (subscribers.length > 0) {
+            subscribers.forEach((userId) => {
+                if (notificationClients[userId]) {
+                    notificationClients[userId].forEach((client) => {
+                        console.log(`Sending notification to user "${userId}"`);     // Debugging statement
+                        client.write(`data: ${JSON.stringify(newPost)}\n\n`);
+                    });
+                }
+            });
+        } else {
+            console.log(`No subscribers found for category "${category}"`);      // Debugging statement
+        }
 
         res.status(201).json({ message: 'Post saved and subscribers notified', subscribers });
     } catch (error) {
@@ -92,6 +112,7 @@ app.post('/api/posts', async (req, res) => {
         res.status(500).json({ error: 'Failed to save post' });
     }
 });
+
 
 // Fetch all posts
 app.get('/api/posts', async (req, res) => {

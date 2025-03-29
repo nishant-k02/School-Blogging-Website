@@ -50,43 +50,78 @@ function Header({ sections = [], title = '' }) {
   const [isChatbotOpen, setChatbotOpen] = useState(false);
 
   // Fetch notifications and subscription status when component mounts
-  useEffect(() => {
+  // useEffect(() => {
 
-    const userData = getUserDataFromLocalStorage();
-    if (Array.isArray(userData)) {
-      setUsers(userData);
-    } else if (typeof userData === 'object' && userData !== null) {
-      setUsers([userData]);
-    } else {
-      console.error('Unexpected user data:', userData);
-    }
+  //   const userData = getUserDataFromLocalStorage();
+  //   if (Array.isArray(userData)) {
+  //     setUsers(userData);
+  //   } else if (typeof userData === 'object' && userData !== null) {
+  //     setUsers([userData]);
+  //   } else {
+  //     console.error('Unexpected user data:', userData);
+  //   }
 
-  }, []);
+  // }, []);
 
- // Real-time notifications using EventSource
+  // Fetch subscriptions when user logs in
+// Fetch subscriptions and set up SSE connection when user logs in
 useEffect(() => {
   if (!user) return;
 
-  const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${user.username}`);
+  const fetchSubscriptionsAndSetupSSE = async () => {
+    try {
+      // Fetch subscriptions
+      const response = await fetch(`http://localhost:5000/api/subscriptions/${user.username}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSubscribedCategories(data.subscriptions); // Update subscribed categories
+        console.log("Fetched subscriptions:", data.subscriptions); // Debugging
 
-  eventSource.onmessage = (event) => {
-    const newPost = JSON.parse(event.data);
+        // Set up SSE connection
+        const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${user.username}`);
+        console.log(`SSE connection established for user "${user.username}"`);
 
-    if (subscribedCategories.includes(newPost.category)) {
-      setNotifications(prev => [
-        { id: Date.now(), message: `New post in ${newPost.category}: "${newPost.title}"` },
-        ...prev,
-      ]);
+        eventSource.onmessage = (event) => {
+          try {
+            const newPost = JSON.parse(event.data);
+            console.log(`Received notification from server:`, newPost);
+
+            console.log("Subscribed categories:", data.subscriptions);
+            if (data.subscriptions.includes(newPost.category)) {
+              console.log(`Adding notification for category "${newPost.category}"`);
+              setNotifications((prevNotifications) => [
+                { id: Date.now(), message: `New post in "${newPost.category}": "${newPost.title}"` },
+                ...prevNotifications,
+              ]);
+            } else {
+              console.log(`Ignoring notification for category "${newPost.category}"`);
+            }
+          } catch (error) {
+            console.error("Error parsing notification data:", error);
+          }
+        };
+
+        eventSource.onerror = () => {
+          console.error("EventSource connection failed.");
+          eventSource.close();
+        };
+
+        return () => eventSource.close(); // Cleanup logic to close SSE connection
+      } else {
+        console.error("Failed to fetch subscriptions");
+      }
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
     }
   };
 
-  eventSource.onerror = () => {
-    console.error('EventSource connection failed.');
-    eventSource.close();
-  };
+  fetchSubscriptionsAndSetupSSE(); // Fetch subscriptions and set up SSE
+}, [user]);
 
-  return () => eventSource.close();
-}, [user, subscribedCategories]);
+// Log notifications only once during state updates
+useEffect(() => {
+  console.log("Current notifications:", notifications);
+}, [notifications]);
 
 
 // Prevent modal from closing when interacting inside
@@ -120,7 +155,7 @@ const handleNotificationsClose = () => {
   setNotificationsDialogOpen(false)
 };
 
-// Subscribe to a category
+// Update handleSubscribe and handleUnsubscribe functions
 const handleSubscribe = async (category) => {
   try {
     const response = await fetch('http://localhost:5000/api/subscribe', {
@@ -131,18 +166,23 @@ const handleSubscribe = async (category) => {
 
     if (response.ok) {
       setSubscribedCategories([...subscribedCategories, category]);
-      console.log(`Subscribed to ${category}`);
+      setNotifications(prev => [
+        ...prev,
+        { id: Date.now(), message: `Successfully subscribed to ${category}` }
+      ]);
     } else {
-      throw new Error(`Failed to subscribe to ${category}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Subscription failed');
     }
   } catch (error) {
-    console.error(error.message);
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), message: `Error: ${error.message}` }
+    ]);
   }
 };
 
 
-
-// Unsubscribe from a category
 const handleUnsubscribe = async (category) => {
   try {
     const response = await fetch('http://localhost:5000/api/unsubscribe', {
@@ -153,14 +193,22 @@ const handleUnsubscribe = async (category) => {
 
     if (response.ok) {
       setSubscribedCategories(subscribedCategories.filter(cat => cat !== category));
-      console.log(`Unsubscribed from ${category}`);
+      setNotifications(prev => [
+        ...prev,
+        { id: Date.now(), message: `Successfully unsubscribed from ${category}` }
+      ]);
     } else {
-      throw new Error(`Failed to unsubscribe from ${category}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Failed to unsubscribe from ${category}`);
     }
   } catch (error) {
-    console.error(error.message);
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), message: `Error: ${error.message}` }
+    ]);
   }
 };
+
 
 
   const handleLogout = () => {
@@ -364,26 +412,36 @@ const handleUnsubscribe = async (category) => {
           </div>
         )}
       </Toolbar>
-      <Dialog open={isSubscribeOpen} onClose={handleSubscribeClose}>
-        <DialogTitle>Manage Subscriptions</DialogTitle>
-        <DialogContent>
-          <ListSubheader>Available Categories</ListSubheader>
-          {sections.map((section) => (
-            <ListItem key={section.title}>
-              <ListItemText primary={section.title} />
-              <Switch
-                checked={subscribedCategories.includes(section.title)}
-                onChange={() => subscribedCategories.includes(section.title) 
-                  ? handleUnsubscribe(section.title) 
-                  : handleSubscribe(section.title)}
-              />
-            </ListItem>
-          ))}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleSubscribeClose}>Close</Button>
-        </DialogActions>
-      </Dialog>
+<Dialog open={isSubscribeOpen} onClose={handleSubscribeClose}>
+  <DialogTitle>Manage Subscriptions</DialogTitle>
+  <DialogContent>
+    <ListSubheader>
+      {subscribedCategories.length > 0 
+        ? `Subscribed to ${subscribedCategories.length} categories`
+        : "No active subscriptions"}
+    </ListSubheader>
+    {sections.map((section) => (
+      <ListItem key={section.title}>
+        <ListItemIcon>
+          {subscribedCategories.includes(section.title) 
+            ? <SubscriptionsIcon color="primary" /> 
+            : <UnsubscribeIcon color="action" />}
+        </ListItemIcon>
+        <ListItemText 
+          primary={section.title} 
+          secondary={`${section.description || 'Category updates'}`} 
+        />
+        <Switch
+          checked={subscribedCategories.includes(section.title)}
+          onChange={() => subscribedCategories.includes(section.title) 
+            ? handleUnsubscribe(section.title) 
+            : handleSubscribe(section.title)}
+        />
+      </ListItem>
+    ))}
+  </DialogContent>
+</Dialog>
+
       <Toolbar
         component="nav"
         variant="dense"
@@ -462,10 +520,10 @@ const handleUnsubscribe = async (category) => {
       <Dialog open={isNotificationsDialogOpen} onClose={handleNotificationsClose} fullWidth>
         <DialogTitle>
           Notifications
-          <Button 
-            variant="outlined" 
-            size="small" 
-            onClick={() => setNotifications([])}
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => setNotifications([])} // Clear all notifications
             sx={{ float: 'right' }}
           >
             Clear All
@@ -477,7 +535,7 @@ const handleUnsubscribe = async (category) => {
               notifications.map((notification) => (
                 <ListItem key={notification.id} divider>
                   <ListItemIcon><NotificationsIcon color="action" /></ListItemIcon>
-                  <ListItemText 
+                  <ListItemText
                     primary={notification.message}
                     secondary={new Date(notification.id).toLocaleString()}
                   />
@@ -489,8 +547,10 @@ const handleUnsubscribe = async (category) => {
               </ListItem>
             )}
           </List>
+          {console.log("Current notifications:", notifications)} {/* Debugging */}
         </DialogContent>
-      </Dialog>
+</Dialog>
+
 
 
       {/* Manage Users Dialog */}
@@ -612,4 +672,5 @@ Header.propTypes = {
   ),
 };
 
-export default Header;
+export default React.memo(Header);
+

@@ -804,4 +804,3 @@ Header.propTypes = {
 };
 
 export default React.memo(Header);
-

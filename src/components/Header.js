@@ -4,11 +4,10 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import UnsubscribeIcon from '@mui/icons-material/Unsubscribe';
 import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import {
-  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Modal,Backdrop, Fade, Switch,ListSubheader,
+  Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Switch,ListSubheader,
   Toolbar, Typography, Drawer, List, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, ListItem, Slide
 } from '@mui/material';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -45,7 +44,7 @@ function Header({ sections = [], title = '' }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const [notifications, setNotifications] = useState([]);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isNotificationsDialogOpen, setNotificationsDialogOpen] = useState(false);
   const [isSubscribeOpen, setSubscribeOpen] = useState(false);
 
@@ -58,36 +57,16 @@ const [aiSummary, setAiSummary] = useState('');
 const [mapCenter, setMapCenter] = useState({ lat: 41.8781, lng: -87.6298 }); // Default Chicago
 const [selectedRec, setSelectedRec] = useState(null);
 
+const [isRecOpen, setRecOpen] = useState(false);
 
-const { isLoaded } = useJsApiLoader({
-  googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY', // Replace with your Google Maps API key
-});
-
+// eslint-disable-next-line
 const handleRegenerate = () => {
   handleChatbotOpen({ stopPropagation: () => {} });
 };
 
 
-
-  // Fetch notifications and subscription status when component mounts
-  // useEffect(() => {
-
-  //   const userData = getUserDataFromLocalStorage();
-  //   if (Array.isArray(userData)) {
-  //     setUsers(userData);
-  //   } else if (typeof userData === 'object' && userData !== null) {
-  //     setUsers([userData]);
-  //   } else {
-  //     console.error('Unexpected user data:', userData);
-  //   }
-
-  // }, []);
-
-  // Fetch subscriptions when user logs in
-// Fetch subscriptions and set up SSE connection when user logs in
-
 useEffect(() => {
-  console.log("Fetched recommendations:", recommendations);
+  // console.log("Fetched recommendations:", recommendations);
 }, [recommendations]);
 
 
@@ -151,6 +130,7 @@ useEffect(() => {
 
 
 // Prevent modal from closing when interacting inside
+// eslint-disable-next-line
 const handleModalClick = (event) => {
   event.stopPropagation(); // Prevents modal from closing on clicks inside
 };
@@ -386,14 +366,10 @@ const handleUnsubscribe = async (category) => {
         <IconButton onClick={() => navigate(`/search?query=${searchQuery}`)}>
           <SearchIcon />
         </IconButton>
-        <Button 
-  variant="outlined" 
-  sx={{ ml: 2, mr: 3 }} 
-  onClick={handleChatbotOpen}
->
-  Recommended For You
-</Button>
-
+        <Button variant="outlined" sx={{ ml: 2, mr: 3 }} onClick={() => setRecOpen(true)}>
+          Recommended For You
+        </Button>
+        <EventRecommendation open={isRecOpen} onClose={() => setRecOpen(false)} />
 
         {user && (
           <div>
@@ -806,3 +782,5 @@ Header.propTypes = {
 };
 
 export default React.memo(Header);
+
+

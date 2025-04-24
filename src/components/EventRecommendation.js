@@ -31,7 +31,7 @@ const icons = {
   user: createColoredIcon('#3fbf50')
 };
 
-const RecommendationModal = ({ open, onClose  }) => {
+const RecommendationModal = ({ open, onClose }) => {
   const [recommendations, setRecommendations] = useState([]);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [suggestedLocation, setSuggestedLocation] = useState('');
@@ -59,6 +59,7 @@ const RecommendationModal = ({ open, onClose  }) => {
     if (currentLocation) {
       fetchRecommendations();
     }
+    // eslint-disable-next-line
   }, [currentLocation]);
 
   const fetchRecommendations = async () => {

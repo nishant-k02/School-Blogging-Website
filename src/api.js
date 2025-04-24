@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 const fetchEvents = async (query, city) => {
-    const apiKey = process.env.SERP_API_KEY || 'your-serp-api-key';    try {
+    const apiKey = process.env.SERP_API_KEY || 'your-serpapi-key';    try {
         const response = await axios.get(`https://serpapi.com/search.json`, {
             params: {
                 q: `${encodeURIComponent(query)}+events`,
@@ -65,12 +65,12 @@ const isEventQuery = (query) => {
 
 app.post('/api/getSuggestions', async (req, res) => {
     const { query } = req.body;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key';
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-key';
         let additionalContext = '';
 
     if (isWeatherQuery(query)) {
         const city = "Chicago"; // Example city, could be dynamic
-        const weatherApiKey = process.env.OPENWEATHERMAP_API_KEY || 'your-openweathermap-api-key';
+        const weatherApiKey = process.env.OPENWEATHERMAP_API_KEY || 'your-openweathermap-key';
                 try {
             const weatherResponse = await axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
                 params: {
@@ -107,7 +107,7 @@ app.post('/api/getSuggestions', async (req, res) => {
 
 app.post('/api/generateReply', async (req, res) => {
     const { postId, content } = req.body;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key';
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-key';
 
     if (!postId || !content) {
         return res.status(400).json({ error: 'Post ID and content are required.' });

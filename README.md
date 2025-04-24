@@ -1,70 +1,180 @@
-# Getting Started with Create React App
+# 📝 BlogBoard
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack blogging platform tailored for school users to post articles, interact via comments and likes, and receive AI-powered recommendations based on real-time weather and location data.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🔧 Tech Stack
 
-### `npm start`
+- **Frontend:** React, Material-UI, Google Maps JavaScript API
+- **Backend:** Node.js + Express.js
+- **Database:** Elasticsearch
+- **AI Integration:** OpenAI Chat Completion API
+- **Search Integration:** SerpAPI
+- **Weather Integration:** OpenWeatherMap API
+- **Location:** HTML5 Geolocation API / IPAPI
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## ✨ Key Features
 
-### `npm test`
+### 📰 Blogging System
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Users can **create, view, like, and delete posts**
+- **Comment system** with optional AI-generated replies
+- Metadata display: category, author, likes, comments
 
-### `npm run build`
+### 🤖 AI-Powered Comment Replies
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Toggle switch to **enable AI reply generation**
+- Uses **OpenAI GPT-3.5** to craft thoughtful responses
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 🔔 Subscription & Notification System
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Users can **subscribe/unsubscribe** to specific post categories
+- New post triggers **real-time notification** to relevant subscribers
+- Notifications are viewable from a dedicated UI dialog
 
-### `npm run eject`
+### 📍 "Recommended For You" Smart Assistant
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Located in the top right of the app as a **button**
+- On click, shows a **popup** with:
+  - 🗺️ **Google Map** with 10 balloons:
+    - 🟢 Green → Current location
+    - 🔴 Red → 3 Restaurants
+    - 🔵 Blue → 3 Concerts/Musical Events
+    - 🟡 Yellow → 3 Sports Events
+  - 🧠 AI-generated recommendation (based on weather and location)
+- Real-time data pulled from:
+  - 📍 HTML5 Geolocation
+  - 🌤️ OpenWeatherMap API
+  - 🔎 SerpAPI
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🗂️ Project Structure
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+nishant-k02-school-blogging-website/
+├── README.md
+├── package.json
+├── public/
+│   ├── index.html
+│   ├── manifest.json
+│   └── robots.txt
+└── src/
+    ├── api.js                # OpenAI, SerpAPI, Weather integration
+    ├── server.js             # Express server and Elasticsearch routes
+    ├── UserContext.js        # Auth and user state management
+    ├── App.js                # Root React component
+    ├── components/           # All major UI components
+    │   ├── Header.js         # Navigation, chatbot, recommendations
+    │   ├── PostsDisplay.js   # Post cards, comments, AI replies
+    │   ├── CreatePost.js     # Post creation form
+    │   ├── chatbot.js        # AI assistant chatbot UI
+    │   ├── SearchResults.js  # Search results using Elasticsearch
+    │   ├── Login.js / Register.js
+    │   └── Blog.js, Main.js, etc.
+    ├── Data/
+    │   ├── posts.json
+    │   ├── posts.xml
+    │   ├── users.xml
+    │   └── initialUsersData.js
+    └── Utils/
+        ├── localStorageUtils.js
+        ├── storageUtils.js
+        └── xmlUtils.js
+```
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## ⚙️ Installation & Setup
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### 1. Clone the Repository
 
-### Code Splitting
+```bash
+git clone https://github.com/yourusername/school-blogging-platform.git
+cd school-blogging-platform
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### 2. Install Dependencies
 
-### Analyzing the Bundle Size
+#### Backend:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+cd backend
+npm install
+```
 
-### Making a Progressive Web App
+#### Frontend:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+cd ../
+npm install
+```
 
-### Advanced Configuration
+### 3. Configure Environment
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Create `.env` file in `backend/` with the following:
 
-### Deployment
+```
+OPENAI_API_KEY=your_openai_api_key
+SERP_API_KEY=your_serpapi_key
+OPENWEATHERMAP_API_KEY=your_openweathermap_key
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### 4. Run the Backend
 
-### `npm run build` fails to minify
+```bash
+cd backend
+node server.js
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### 5. Run the Frontend
+
+```bash
+npm start
+```
+
+---
+
+## 📫 API Testing with Postman
+
+Here are some useful endpoints to test:
+
+| Method | Endpoint                     | Description                      |
+| ------ | ---------------------------- | -------------------------------- |
+| GET    | `/api/posts`                 | Retrieve all posts               |
+| POST   | `/api/posts`                 | Create a new post                |
+| POST   | `/posts/:id/comment`         | Add comment to a post            |
+| POST   | `/posts/:id/like`            | Like a post                      |
+| POST   | `/api/subscribe`             | Subscribe to a topic             |
+| POST   | `/api/unsubscribe`           | Unsubscribe from a topic         |
+| GET    | `/api/subscriptions/:userId` | Get user subscriptions           |
+| POST   | `/api/generateReply`         | Generate AI comment for a post   |
+| POST   | `/api/recommend`             | Get real-time AI recommendations |
+
+---
+
+## 🔍 View Elasticsearch Data
+
+To view your indexed data in Elasticsearch, visit:
+
+```
+http://localhost:9200/blog-posts/_search?pretty
+http://localhost:9200/subscriptions/_search?pretty
+```
+
+(Ensure Elasticsearch is running locally on port `9200`)
+
+---
+
+## 🧠 Powered By
+
+- [OpenAI](https://platform.openai.com/)
+- [OpenWeatherMap](https://openweathermap.org/)
+- [SerpAPI](https://serpapi.com/)
+- [Google Maps JavaScript API](https://developers.google.com/maps)
+- [Elasticsearch](https://www.elastic.co/elasticsearch/)
+
+---

@@ -9,6 +9,8 @@ import {
 } from '@mui/material';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateIcon from '@mui/icons-material/Create';
@@ -57,12 +59,9 @@ const [aiSummary, setAiSummary] = useState('');
 const [mapCenter, setMapCenter] = useState({ lat: 41.8781, lng: -87.6298 }); // Default Chicago
 const [selectedRec, setSelectedRec] = useState(null);
 
-const [isRecOpen, setRecOpen] = useState(false);
-
-
 
 const { isLoaded } = useJsApiLoader({
-  googleMapsApiKey: 'AIzaSyBGHQtmByBeHzA8d-Vlw5iF2hr2C5xj604',
+  googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY', // Replace with your Google Maps API key
 });
 
 const handleRegenerate = () => {
@@ -89,7 +88,7 @@ const handleRegenerate = () => {
 // Fetch subscriptions and set up SSE connection when user logs in
 
 useEffect(() => {
-  // console.log("Fetched recommendations:", recommendations);
+  console.log("Fetched recommendations:", recommendations);
 }, [recommendations]);
 
 
@@ -388,12 +387,13 @@ const handleUnsubscribe = async (category) => {
         <IconButton onClick={() => navigate(`/search?query=${searchQuery}`)}>
           <SearchIcon />
         </IconButton>
-        <Button variant="outlined" sx={{ ml: 2, mr: 3 }} onClick={() => setRecOpen(true)}>
+        <Button 
+  variant="outlined" 
+  sx={{ ml: 2, mr: 3 }} 
+  onClick={handleChatbotOpen}
+>
   Recommended For You
 </Button>
-<EventRecommendation open={isRecOpen} onClose={() => setRecOpen(false)} />
-
-
 
 
         {user && (
@@ -807,4 +807,3 @@ Header.propTypes = {
 };
 
 export default React.memo(Header);
-

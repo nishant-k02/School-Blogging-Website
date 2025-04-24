@@ -21,7 +21,7 @@ app.use(bodyParser.json());
 // Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
 async function fetchOpenAIResponse(query) {
     const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your_openai_key_here'; // Ensure you set your OpenAI API key in the environment variables
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-key'; // Replace with your actual OpenAI key
 
     try {
       const response = await axios.post(
@@ -290,6 +290,120 @@ app.post("/api/recommend", async (req, res) => {
     const { query } = req.body;
     const recommendation = await getActivityRecommendation(query);
     res.json({ response: recommendation });
+  });
+
+
+// Resturant, music events, sports events recommendations endpoint
+
+app.post('/api/recommendations', async (req, res) => {
+    try {
+      const openaiApiKey = 'your-openai-key'; // Replace with your actual OpenAI key
+      const serpApiKey = 'your-serpapi-key'; // Replace with your actual SerpAPI key
+      const weatherApiKey = 'your-openweathermap-key'; // Replace with your actual OpenWeatherMap key
+  
+      // Step 1: Get user's current city using IP
+      const locationRes = await axios.get("https://ipapi.co/json/");
+      const { city, latitude, longitude } = locationRes.data;
+  
+      // Step 2: Get current weather
+      const weatherRes = await axios.get("https://api.openweathermap.org/data/2.5/weather", {
+        params: {
+          q: city,
+          appid: weatherApiKey,
+          units: 'metric',
+        }
+      });
+      const weatherDescription = weatherRes.data.weather[0].description;
+      const temperature = weatherRes.data.main.temp;
+  
+      // Step 3: Fetch event data using SerpAPI
+      const fetchSerpResults = async (type) => {
+        const { data } = await axios.get('https://serpapi.com/search.json', {
+          params: {
+            q: `${type} in ${city}`,
+            location: city,
+            api_key: serpApiKey,
+          }
+        });
+
+        // console.log(`Raw ${type} SerpAPI result:`, JSON.stringify(data, null, 2));   Debugginhg statement to check the raw data
+      
+        // Try local_results first
+        let results = data.local_results;
+        if (!Array.isArray(results)) {
+          // Try places_results if local_results is not an array
+          results = data.places_results;
+        }
+      
+        if (!Array.isArray(results)) {
+          return [];
+        }
+      
+        return results.slice(0, 3); // Return only top 3
+      };
+      
+      
+  
+      const restaurants = await fetchSerpResults("restaurants");
+      const concerts = await fetchSerpResults("music concerts");
+      const sports = await fetchSerpResults("sports events");
+  
+      // Step 4: Format events for frontend
+      const formatResult = (result, type) => {
+        const lat = result.coordinates?.latitude || result.latitude;
+        const lng = result.coordinates?.longitude || result.longitude;
+      
+        if (!lat || !lng) return null;
+      
+        return {
+          name: result.title || result.name || "Unknown",
+          type,
+          address: result.address || result.address_lines?.join(', ') || "Not available",
+          hours: result.hours || "Not listed",
+          lat: parseFloat(lat),
+          lng: parseFloat(lng),
+        };
+      };
+      
+      
+  
+      const recommendations = [
+        ...restaurants.map(r => formatResult(r, "restaurant")),
+        ...concerts.map(c => formatResult(c, "concert")),
+        ...sports.map(s => formatResult(s, "sport")),
+      ].filter(Boolean); // Remove nulls
+  
+      // Step 5: OpenAI summary
+      const promptText = `Given this weather "${weatherDescription}" with temperature ${temperature}°C in ${city}, suggest 3 restaurants, 3 concerts, and 3 sports events:\n\n` +
+        recommendations.map(r => `• [${r.type.toUpperCase()}] ${r.name} at ${r.address} (${r.hours})`).join('\n');
+  
+      const openaiRes = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'You are a helpful assistant who gives local activity recommendations.' },
+          { role: 'user', content: promptText }
+        ]
+      }, {
+        headers: {
+          Authorization: `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      const aiSummary = openaiRes.data.choices?.[0]?.message?.content || 'No summary available.';
+  
+      // Step 6: Respond with everything
+      res.json({
+        location: { city, latitude, longitude },
+        weather: { description: weatherDescription, temperature },
+        recommendations,
+        summary: aiSummary
+      });
+  
+    } catch (error) {
+      console.error("Error in /api/recommendations:", error.message || error);
+      res.status(500).json({ error: "Failed to fetch recommendations." });
+    }
   });
 
 app.listen(port, () => {

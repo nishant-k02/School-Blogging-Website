@@ -8,6 +8,7 @@ const app = express();
 const port = 5000;
 app.use(cors({ origin: '*' }));
 const client = new Client({ node: 'http://localhost:9200' });
+const axios = require('axios');
 
 
 app.use(cors({
@@ -20,7 +21,7 @@ app.use(bodyParser.json());
 // Function to fetch OpenAI response, similar to fetchOpenAIResponse in api.js
 async function fetchOpenAIResponse(query) {
     const prompt = `Generate a small appreciate sentence based on the query: ${query}`;
-    const openaiApiKey = process.env.OPENAI_API_KEY || 'your-openai-api-key'; // Ensure you have your OpenAI API key set in your environment variables
+    const openaiApiKey = process.env.OPENAI_API_KEY || 'your_openai_key_here'; // Ensure you set your OpenAI API key in the environment variables
 
     try {
       const response = await axios.post(

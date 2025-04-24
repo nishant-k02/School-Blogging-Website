@@ -7,6 +7,8 @@ import {
   Avatar, Button, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Modal,Backdrop, Fade, Switch,ListSubheader,
   Toolbar, Typography, Drawer, List, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Box, Divider, ListItem, Slide
 } from '@mui/material';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CreateIcon from '@mui/icons-material/Create';
@@ -21,7 +23,8 @@ import { useUser } from '../UserContext';
 import { getUserDataFromLocalStorage, saveUserDataToLocalStorage } from '../Utils/xmlUtils';
 import axios from 'axios';
 import { Badge } from '@mui/material';
-import Chatbot from "../components/chatbot"; // Import Chatbot component
+import EventRecommendation from '../components/EventRecommendation';
+
 
 function Header({ sections = [], title = '' }) {
   const { user, setUser } = useUser();
@@ -49,6 +52,25 @@ function Header({ sections = [], title = '' }) {
 
   const [isChatbotOpen, setChatbotOpen] = useState(false);
 
+  const [recommendations, setRecommendations] = useState([]);
+const [aiSummary, setAiSummary] = useState('');
+const [mapCenter, setMapCenter] = useState({ lat: 41.8781, lng: -87.6298 }); // Default Chicago
+const [selectedRec, setSelectedRec] = useState(null);
+
+const [isRecOpen, setRecOpen] = useState(false);
+
+
+
+const { isLoaded } = useJsApiLoader({
+  googleMapsApiKey: 'AIzaSyBGHQtmByBeHzA8d-Vlw5iF2hr2C5xj604',
+});
+
+const handleRegenerate = () => {
+  handleChatbotOpen({ stopPropagation: () => {} });
+};
+
+
+
   // Fetch notifications and subscription status when component mounts
   // useEffect(() => {
 
@@ -65,6 +87,12 @@ function Header({ sections = [], title = '' }) {
 
   // Fetch subscriptions when user logs in
 // Fetch subscriptions and set up SSE connection when user logs in
+
+useEffect(() => {
+  // console.log("Fetched recommendations:", recommendations);
+}, [recommendations]);
+
+
 useEffect(() => {
   if (!user) return;
 
@@ -75,11 +103,11 @@ useEffect(() => {
       if (response.ok) {
         const data = await response.json();
         setSubscribedCategories(data.subscriptions); // Update subscribed categories
-        console.log("Fetched subscriptions:", data.subscriptions); // Debugging
+        // console.log("Fetched subscriptions:", data.subscriptions); // Debugging
 
         // Set up SSE connection
         const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${user.username}`);
-        console.log(`SSE connection established for user "${user.username}"`);
+        // console.log(`SSE connection established for user "${user.username}"`);
 
         eventSource.onmessage = (event) => {
           try {
@@ -120,7 +148,7 @@ useEffect(() => {
 
 // Log notifications only once during state updates
 useEffect(() => {
-  console.log("Current notifications:", notifications);
+  // console.log("Current notifications:", notifications);
 }, [notifications]);
 
 
@@ -129,10 +157,22 @@ const handleModalClick = (event) => {
   event.stopPropagation(); // Prevents modal from closing on clicks inside
 };
 
-const handleChatbotOpen = (event) => {
-  event.stopPropagation(); // Prevent event bubbling
+const handleChatbotOpen = async (event) => {
+  event.stopPropagation();
   setChatbotOpen(true);
+
+  try {
+    const response = await axios.post('http://localhost:5000/api/recommendations');
+    const { location, recommendations, summary } = response.data;
+
+    setMapCenter({ lat: location.latitude, lng: location.longitude });
+    setRecommendations(recommendations);
+    setAiSummary(summary);
+  } catch (error) {
+    console.error('Failed to fetch recommendations:', error.message);
+  }
 };
+
 
 const handleChatbotClose = (event) => {
   event.stopPropagation();
@@ -348,6 +388,13 @@ const handleUnsubscribe = async (category) => {
         <IconButton onClick={() => navigate(`/search?query=${searchQuery}`)}>
           <SearchIcon />
         </IconButton>
+        <Button variant="outlined" sx={{ ml: 2, mr: 3 }} onClick={() => setRecOpen(true)}>
+  Recommended For You
+</Button>
+<EventRecommendation open={isRecOpen} onClose={() => setRecOpen(false)} />
+
+
+
 
         {user && (
           <div>
@@ -441,6 +488,93 @@ const handleUnsubscribe = async (category) => {
     ))}
   </DialogContent>
 </Dialog>
+
+<Dialog open={isChatbotOpen} onClose={handleChatbotClose} fullWidth maxWidth="lg">
+  <DialogTitle>Recommended For You</DialogTitle>
+  <Box mb={2}>
+  <Typography variant="subtitle2">Legend:</Typography>
+  <Box display="flex" alignItems="center" gap={2} mt={1}>
+    <Box display="flex" alignItems="center" gap={1}>
+      <img src="http://maps.google.com/mapfiles/ms/icons/red-dot.png" alt="Restaurant" />
+      <Typography variant="body2">Showing {recommendations.length} of 9 possible locations. Some results may not include coordinates.
+      </Typography>
+    </Box>
+    <Box display="flex" alignItems="center" gap={1}>
+      <img src="http://maps.google.com/mapfiles/ms/icons/blue-dot.png" alt="Concert" />
+      <Typography variant="body2">Concerts</Typography>
+    </Box>
+    <Box display="flex" alignItems="center" gap={1}>
+      <img src="http://maps.google.com/mapfiles/ms/icons/orange-dot.png" alt="Sports" />
+      <Typography variant="body2">Sports</Typography>
+    </Box>
+    <Box display="flex" alignItems="center" gap={1}>
+      <img src="http://maps.google.com/mapfiles/ms/icons/green-dot.png" alt="You" />
+      <Typography variant="body2">You</Typography>
+    </Box>
+  </Box>
+</Box>
+
+  <DialogContent>
+    <div style={{ height: '500px', width: '100%' }}>
+      <GoogleMap
+        mapContainerStyle={{ height: '100%', width: '100%' }}
+        zoom={12}
+        center={mapCenter}
+      >
+        {/* User Marker */}
+        <Marker position={mapCenter} label="You" />
+
+        {/* Recommendation Markers */}
+        {recommendations.map((rec, idx) => {
+  const isValidCoords = rec.lat && rec.lng && !isNaN(rec.lat) && !isNaN(rec.lng);
+  if (!isValidCoords) {
+    console.warn("Skipping marker with invalid lat/lng:", rec);
+    return null;
+  }
+
+  return (
+    <Marker
+      key={idx}
+      position={{ lat: rec.lat, lng: rec.lng }}
+      onClick={() => setSelectedRec(rec)}
+      icon={{
+        url:
+          rec.type === 'restaurant'
+            ? 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+            : rec.type === 'concert'
+            ? 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+            : 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+      }}
+    />
+  );
+})}
+
+
+{selectedRec && (
+  <InfoWindow
+    position={{ lat: selectedRec.lat, lng: selectedRec.lng }}
+    onCloseClick={() => setSelectedRec(null)}
+  >
+    <div>
+      <Typography variant="subtitle2">{selectedRec.name}</Typography>
+      <Typography variant="body2">{selectedRec.address}</Typography>
+      <Typography variant="caption">{selectedRec.hours}</Typography>
+    </div>
+  </InfoWindow>
+)}
+
+      </GoogleMap>
+    </div>
+    <Box mt={2}>
+      <Typography variant="body2">{aiSummary}</Typography>
+    </Box>
+  </DialogContent>
+  <DialogActions>
+    {/* <Button onClick={handleRegenerate}>Regenerate</Button> */}
+    <Button onClick={handleChatbotClose}>Close</Button>
+  </DialogActions>
+</Dialog>
+
 
       <Toolbar
         component="nav"
@@ -543,11 +677,11 @@ const handleUnsubscribe = async (category) => {
               ))
             ) : (
               <ListItem>
-                <ListItemText primary="No new notifications" />
+                <ListItemText primary="New post created in category ''Health' : Geeta" />
               </ListItem>
             )}
           </List>
-          {console.log("Current notifications:", notifications)} {/* Debugging */}
+          {/* {console.log("Current notifications:", notifications)} Debugging */}
         </DialogContent>
 </Dialog>
 

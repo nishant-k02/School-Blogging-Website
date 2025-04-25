@@ -27,7 +27,7 @@ const RecommendationModal = ({ open, onClose }) => {
   const [error, setError] = useState('');
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: 'AIzaSyCY5PAe4wMyAN86NzsQTvcJIoeiu6AvAhk', // Replace with your API key
+    googleMapsApiKey: 'your-googlemaps-api-key', // Replace with your API key
   });
 
   useEffect(() => {

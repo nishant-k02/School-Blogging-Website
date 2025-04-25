@@ -5,30 +5,15 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from 'axios';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-function createColoredIcon(color) {
-  const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 
-    9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z"/>
-  </svg>`;
-  return new L.Icon({
-    iconUrl: 'data:image/svg+xml;base64,' + btoa(svgIcon),
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-    shadowSize: [41, 41]
-  });
-}
+import {
+  GoogleMap, Marker, InfoWindow, useJsApiLoader
+} from '@react-google-maps/api';
 
 const icons = {
-  restaurant: createColoredIcon('#f54242'),
-  music: createColoredIcon('#4287f5'),
-  sports: createColoredIcon('#ff9800'),
-  user: createColoredIcon('#3fbf50')
+  restaurant: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+  music: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+  sports: 'http://maps.google.com/mapfiles/ms/icons/orange-dot.png',
+  user: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png',
 };
 
 const RecommendationModal = ({ open, onClose }) => {
@@ -37,8 +22,13 @@ const RecommendationModal = ({ open, onClose }) => {
   const [suggestedLocation, setSuggestedLocation] = useState('');
   const [weather, setWeather] = useState(null);
   const [markers, setMarkers] = useState([]);
+  const [selectedMarker, setSelectedMarker] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: 'AIzaSyCY5PAe4wMyAN86NzsQTvcJIoeiu6AvAhk', // Replace with your API key
+  });
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -79,8 +69,8 @@ const RecommendationModal = ({ open, onClose }) => {
           if (event.details?.latitude && event.details?.longitude) {
             acc.push({
               name: event.name,
-              latitude: event.details.latitude,
-              longitude: event.details.longitude,
+              lat: parseFloat(event.details.latitude),
+              lng: parseFloat(event.details.longitude),
               type: event.type.toLowerCase(),
               details: event.details
             });
@@ -90,8 +80,8 @@ const RecommendationModal = ({ open, onClose }) => {
 
         newMarkers.push({
           name: "Your Location",
-          latitude: currentLocation.lat,
-          longitude: currentLocation.lng,
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
           type: 'user',
           details: {
             address: 'Current location',
@@ -126,12 +116,9 @@ const RecommendationModal = ({ open, onClose }) => {
         borderRadius: 2,
         position: 'relative'
       }}>
-        {/* ✅ Close Button */}
         <IconButton
           aria-label="close"
-          onClick={() => {
-            onClose();
-          }}
+          onClick={onClose}
           sx={{ position: 'absolute', top: 8, right: 8 }}
         >
           <CloseIcon />
@@ -141,43 +128,14 @@ const RecommendationModal = ({ open, onClose }) => {
           🎯 Event Recommendations
         </Typography>
 
-        {currentLocation && (
-          <Box sx={{ position: 'relative' }}>
-            <MapContainer center={[currentLocation.lat, currentLocation.lng]} zoom={13} style={{ width: '100%', height: '50vh' }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; OpenStreetMap contributors'
-              />
-              {markers.map((marker, index) => (
-                <Marker
-                  key={index}
-                  position={[marker.latitude, marker.longitude]}
-                  icon={icons[marker.type] || icons.user}
-                >
-                  <Popup>
-                    <div>
-                      <strong>{marker.name}</strong><br />
-                      📍 {marker.details.address}<br />
-                      🗂 Type: {marker.type}<br />
-                      📆 {marker.details.date} ⏰ {marker.details.time}<br />
-                      {marker.type === 'restaurant' && (
-                        <>
-                          🕒 Hours:
-                          <ul>
-                            {Array.isArray(marker.details.hours)
-                              ? marker.details.hours.map((hr, i) => <li key={i}>{hr}</li>)
-                              : <li>{marker.details.hours}</li>}
-                          </ul>
-                        </>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
-
-            {/* Legend */}
-            <Box sx={{
+        {isLoaded && currentLocation && (
+          <GoogleMap
+            center={currentLocation}
+            zoom={13}
+            mapContainerStyle={{ width: '100%', height: '50vh' }}
+          >
+            {/* Map Legend */}
+            <div style={{
               position: 'absolute',
               top: 10,
               right: 10,
@@ -188,12 +146,55 @@ const RecommendationModal = ({ open, onClose }) => {
               fontSize: '12px',
               zIndex: 1000
             }}>
-              <div><span style={legendDot('#3fbf50')}></span>You</div>
-              <div><span style={legendDot('#f54242')}></span>Restaurant</div>
-              <div><span style={legendDot('#4287f5')}></span>Concert</div>
-              <div><span style={legendDot('#ff9800')}></span>Sports</div>
-            </Box>
-          </Box>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                <div style={{ ...legendDot('#3fbf50') }}></div>
+                <span>You</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                <div style={{ ...legendDot('#f54242') }}></div>
+                <span>Restaurant</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                <div style={{ ...legendDot('#4287f5') }}></div>
+                <span>Concert</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ ...legendDot('#ff9800') }}></div>
+                <span>Sports</span>
+              </div>
+            </div>
+            {markers.map((marker, idx) => (
+              <Marker
+                key={idx}
+                position={{ lat: marker.lat, lng: marker.lng }}
+                icon={icons[marker.type] || icons.user}
+                onClick={() => setSelectedMarker(marker)}
+              />
+            ))}
+            {selectedMarker && (
+              <InfoWindow
+                position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
+                onCloseClick={() => setSelectedMarker(null)}
+              >
+                <div>
+                  <strong>{selectedMarker.name}</strong><br />
+                  📍 {selectedMarker.details.address}<br />
+                  🗂 Type: {selectedMarker.type}<br />
+                  📆 {selectedMarker.details.date} ⏰ {selectedMarker.details.time}<br />
+                  {selectedMarker.type === 'restaurant' && (
+                    <>
+                      🕒 Hours:
+                      <ul>
+                        {Array.isArray(selectedMarker.details.hours)
+                          ? selectedMarker.details.hours.map((hr, i) => <li key={i}>{hr}</li>)
+                          : <li>{selectedMarker.details.hours}</li>}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </InfoWindow>
+            )}
+          </GoogleMap>
         )}
 
         <Box mt={2} textAlign="center">
@@ -216,18 +217,14 @@ const RecommendationModal = ({ open, onClose }) => {
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {recommendations.map((event, index) => (
-              <Card
-                key={index}
-                elevation={4}
-                sx={{
-                  borderLeft: `6px solid ${
-                    event.type === 'restaurant' ? '#f54242' :
-                    event.type === 'music' ? '#4287f5' :
-                    '#ff9800'
-                  }`,
-                  p: 2
-                }}
-              >
+              <Card key={index} elevation={4} sx={{
+                borderLeft: `6px solid ${
+                  event.type === 'restaurant' ? '#f54242' :
+                  event.type === 'music' ? '#4287f5' :
+                  '#ff9800'
+                }`,
+                p: 2
+              }}>
                 <CardContent>
                   <Typography variant="h6" fontWeight="bold">{event.name}</Typography>
                   <Typography variant="body2" color="textSecondary">{event.type.toUpperCase()} Event</Typography>
@@ -250,17 +247,17 @@ const RecommendationModal = ({ open, onClose }) => {
         )}
       </Box>
     </Modal>
+    
   );
 };
-
-// Helper for colored dots
 const legendDot = (color) => ({
-  display: 'inline-block',
-  width: 12,
-  height: 12,
+  width: '12px',
+  height: '12px',
   backgroundColor: color,
   borderRadius: '50%',
-  marginRight: 6
+  marginRight: '8px',
+  display: 'inline-block'
 });
+
 
 export default RecommendationModal;

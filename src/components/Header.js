@@ -76,14 +76,14 @@ useEffect(() => {
   const fetchSubscriptionsAndSetupSSE = async () => {
     try {
       // Fetch subscriptions
-      const response = await fetch(`http://localhost:5000/api/subscriptions/${user.username}`);
+      const response = await fetch(`http://localhost:5001/api/subscriptions/${user.username}`);
       if (response.ok) {
         const data = await response.json();
         setSubscribedCategories(data.subscriptions); // Update subscribed categories
         // console.log("Fetched subscriptions:", data.subscriptions); // Debugging
 
         // Set up SSE connection
-        const eventSource = new EventSource(`http://localhost:5000/api/notifications?userId=${user.username}`);
+        const eventSource = new EventSource(`http://localhost:5001/api/notifications?userId=${user.username}`);
         // console.log(`SSE connection established for user "${user.username}"`);
 
         eventSource.onmessage = (event) => {
@@ -140,7 +140,7 @@ const handleChatbotOpen = async (event) => {
   setChatbotOpen(true);
 
   try {
-    const response = await axios.post('http://localhost:5000/api/recommendations');
+    const response = await axios.post('http://localhost:5001/api/recommendations');
     const { location, recommendations, summary } = response.data;
 
     setMapCenter({ lat: location.latitude, lng: location.longitude });
@@ -176,7 +176,7 @@ const handleNotificationsClose = () => {
 // Update handleSubscribe and handleUnsubscribe functions
 const handleSubscribe = async (category) => {
   try {
-    const response = await fetch('http://localhost:5000/api/subscribe', {
+    const response = await fetch('http://localhost:5001/api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.username, topic: category }),
@@ -203,7 +203,7 @@ const handleSubscribe = async (category) => {
 
 const handleUnsubscribe = async (category) => {
   try {
-    const response = await fetch('http://localhost:5000/api/unsubscribe', {
+    const response = await fetch('http://localhost:5001/api/unsubscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.username, topic: category }),

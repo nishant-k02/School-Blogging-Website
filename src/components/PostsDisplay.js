@@ -32,7 +32,7 @@ const PostsDisplay = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/posts');
+        const response = await fetch('http://localhost:5001/api/posts');
         if (!response.ok) throw new Error('Failed to fetch posts');
         
         const data = await response.json();
@@ -49,7 +49,7 @@ const PostsDisplay = () => {
   // Handle Like
   const handleLike = async (postId) => {
     try {
-      const response = await fetch(`http://localhost:5000/posts/${postId}/like`, {
+      const response = await fetch(`http://localhost:5001/posts/${postId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -84,7 +84,7 @@ const PostsDisplay = () => {
     // console.log("Current Post ID when adding comment:", currentPostId); // Debugging
 
     try {
-      const response = await fetch(`http://localhost:5000/posts/${currentPostId}/comment`, {
+      const response = await fetch(`http://localhost:5001/posts/${currentPostId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newComment, author: currentUser?.username }),
@@ -113,7 +113,7 @@ const PostsDisplay = () => {
 
   const confirmDeletePost = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/posts/${currentPostId}`, {
+      const response = await fetch(`http://localhost:5001/posts/${currentPostId}`, {
         method: 'DELETE',
       });
 

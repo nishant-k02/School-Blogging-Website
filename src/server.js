@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { getActivityRecommendation } = require("./api.js");
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -5,9 +6,18 @@ const { Client } = require('@elastic/elasticsearch');
 const cors = require('cors');
 
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5001; // Changed from 5000 to 5001 to avoid conflicts
 app.use(cors({ origin: '*' }));
-const client = new Client({ node: 'http://localhost:9200' });
+
+// Configure Elasticsearch client with authentication
+const client = new Client({ 
+    node: process.env.ELASTICSEARCH_NODE || 'http://localhost:9200',
+    auth: {
+        username: process.env.ELASTICSEARCH_USERNAME || 'elastic',
+        password: process.env.ELASTICSEARCH_PASSWORD || 'JLUkr*m8ydlrN0wIwcBM'
+    }
+});
+
 const axios = require('axios');
 
 

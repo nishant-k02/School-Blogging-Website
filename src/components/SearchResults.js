@@ -22,7 +22,7 @@ const SearchResults = () => {
   useEffect(() => {
     const fetchSearchResults = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/search?query=' + encodeURIComponent(searchQuery));
+        const response = await axios.get('http://localhost:5001/api/search?query=' + encodeURIComponent(searchQuery));
         setPosts(response.data);
         setChecked(true);
       } catch (error) {
